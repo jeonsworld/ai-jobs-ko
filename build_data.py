@@ -193,43 +193,136 @@ def slugify(text: str) -> str:
     return text.strip("-").lower()[:80]
 
 
-def _heuristic_exposure(title: str, big: str) -> int:
+def _heuristic_exposure(title: str, big: str) -> tuple[int, list[str]]:
     base = BIG_BASE_EXPOSURE.get(big, 5.0)
     score = base
+    matched: list[str] = []
     for pat, delta in EXPOSURE_KEYWORDS:
         if re.search(pat, title):
             score += delta
-    return max(0, min(10, round(score)))
+            # 정규식에서 (...|...|...) 첫 매치 키워드 추출
+            m = re.search(pat, title)
+            if m:
+                matched.append(m.group(0))
+    return max(0, min(10, round(score))), matched
 
 
-def _exposure_rationale(score: int, source: str, extra: str = "") -> str:
-    if score >= 8:
-        msg = "디지털·정보처리 중심 업무로 LLM·자동화에 의한 업무 재편이 빠르게 진행될 가능성이 큽니다."
-    elif score >= 6:
-        msg = "문서·데이터·커뮤니케이션이 주요 업무로 AI 보조 도구가 생산성을 크게 끌어올릴 영역입니다."
-    elif score >= 4:
-        msg = "디지털 업무와 대면·현장 업무가 혼재되어 부분적으로 AI 보조가 가능합니다."
-    elif score >= 2:
-        msg = "주로 신체·대면 업무로 AI는 일부 행정·일정관리 업무 정도에 영향을 미칩니다."
-    else:
-        msg = "물리적 작업·현장 대응이 핵심이라 현재 AI의 직접적 영향은 제한적입니다."
-    return f"{msg} {extra}".strip()
+# 대분류(KNOW big) × 점수 구간(low/mid/high) 메시지 매트릭스
+# 같은 점수라도 직군 특성에 맞는 자연스러운 한국어 설명 제공
+_RATIONALE_MATRIX: dict[str, dict[str, str]] = {
+    # 0 = 경영·사무·금융
+    "0": {
+        "high": "기획·문서·데이터 처리가 업무의 큰 비중을 차지해, LLM과 자동화 도구가 보고서 작성·분석·커뮤니케이션을 직접 보강합니다.",
+        "mid": "디지털 업무와 대면 협업·의사결정이 섞여 있어, AI는 자료 정리·초안 생성·분석 영역에서 생산성을 끌어올립니다.",
+        "low": "신체적 활동이 거의 없는 사무성 업무이지만 정형화 정도가 낮아, AI 도입은 부분적·점진적입니다.",
+    },
+    # 1 = 연구·공학기술
+    "1": {
+        "high": "코드·문서·시뮬레이션 등 디지털 산출물이 핵심이라, LLM·코딩 어시스턴트가 작업 흐름을 직접 가속합니다.",
+        "mid": "설계·실험·현장 검증이 혼재되어 있어, AI는 데이터 분석·문서 작성·코드 생성 부분에서 보조 역할을 합니다.",
+        "low": "현장 실험·물리 측정이 핵심이라 AI는 보조 분석 정도에 영향을 미칩니다.",
+    },
+    # 2 = 교육·법률·사회복지·공공안전
+    "2": {
+        "high": "교안·문서·근거 자료 준비가 업무에서 큰 비중을 차지해, LLM이 초안 작성·요약·검색을 빠르게 보강합니다.",
+        "mid": "사람을 직접 가르치거나 상담·집행하는 업무가 핵심이라, AI는 자료 준비·기록 정리 정도를 보조합니다.",
+        "low": "대면 상담·현장 출동·물리적 개입이 중심이라, AI 도입은 행정 업무에 한정됩니다.",
+    },
+    # 3 = 보건·의료
+    "3": {
+        "high": "영상 판독·기록 분석·진단 보조 등 데이터 중심 업무가 커서, AI가 진단 보조·문서 작성에 직접 기여합니다.",
+        "mid": "진료·간호·검사 등 신체 접촉이 핵심이지만 기록·판독 영역에서는 AI가 점차 침투합니다.",
+        "low": "환자와 직접 신체 접촉·돌봄이 핵심이라 AI는 차트 정리·교대 일정 같은 주변 업무에만 영향을 줍니다.",
+    },
+    # 4 = 예술·디자인·방송·스포츠
+    "4": {
+        "high": "이미지·영상·텍스트 생성에 생성형 AI가 직접 적용 가능해, 도구로서 또는 경쟁자로서 빠르게 영향을 미칩니다.",
+        "mid": "창작·연출·기획에 인간 판단이 필요하지만, AI는 레퍼런스 생성·편집 보조 영역에서 생산성을 끌어올립니다.",
+        "low": "신체 표현·실시간 공연이 핵심이라 AI 영향은 보조 도구 수준입니다.",
+    },
+    # 5 = 미용·여행·음식·경비·돌봄·청소
+    "5": {
+        "high": "예약·고객 응대·일정 관리 부분이 디지털화되어 AI가 보조하지만, 대면 서비스 자체는 사람 몫입니다.",
+        "mid": "직접 손·몸을 쓰는 서비스가 본질이라 AI는 예약·고객관리 같은 주변 업무에 한정됩니다.",
+        "low": "신체적 서비스·돌봄·청소가 핵심이라 현재 AI의 직접 대체는 어렵습니다.",
+    },
+    # 6 = 영업·판매·운전·운송
+    "6": {
+        "high": "고객 분석·견적·문서 작성에서 AI 보조가 가능하지만, 대면 영업·운전 자체는 사람 중심입니다.",
+        "mid": "상담·판매·배송이 혼재된 업무라, AI는 일정·재고·견적 같은 후방 업무에서 보조합니다.",
+        "low": "운전·배송·매장 응대 등 실시간 물리 업무가 핵심이라 AI 영향은 제한적입니다.",
+    },
+    # 7 = 건설·채굴
+    "7": {
+        "high": "도면 검토·시공 시뮬레이션 등 설계·기술 업무에서 AI 보조가 가능합니다.",
+        "mid": "현장 시공과 사무 업무가 섞여 있어, AI는 도면·견적·일정 영역에서 점진적으로 도입됩니다.",
+        "low": "현장 작업·중장비 조작이 핵심이라 AI 영향은 자동화 장비 도입 시 간접적입니다.",
+    },
+    # 8 = 설치·정비·생산
+    "8": {
+        "high": "공정 데이터 분석·검사 자동화 등 디지털 영역이 커지는 직군은 AI 영향이 큽니다.",
+        "mid": "수작업과 데이터 모니터링이 섞여 있어, AI는 품질 검사·예지보전 영역에서 보조합니다.",
+        "low": "기계 조작·수공 작업이 핵심이라 AI 직접 대체는 어렵고, 자동화 장비 도입 시 간접 영향이 큽니다.",
+    },
+    # 9 = 농림어업
+    "9": {
+        "high": "정밀농업·드론·센서 데이터 활용이 빠르게 늘어나, AI 분석이 작업 결정에 직접 기여합니다.",
+        "mid": "현장 작업과 데이터 활용이 혼재되어 AI는 작황 예측·품종 추천 영역에서 보조합니다.",
+        "low": "기후·생물·물리적 변수 대응이 핵심이라 AI 영향은 분석 보조에 한정됩니다.",
+    },
+}
 
 
-def calc_exposure(title: str, big: str) -> tuple[int, str, str]:
-    """0~10 점수 + rationale + source('Felten 2021' or '휴리스틱')."""
+def _band(score: int) -> str:
+    return "high" if score >= 6 else ("mid" if score >= 3 else "low")
+
+
+def _exposure_rationale(score: int, big: str) -> str:
+    """대분류 × 점수 구간 조합으로 자연스러운 한국어 설명 반환."""
+    matrix = _RATIONALE_MATRIX.get(big, _RATIONALE_MATRIX["0"])
+    return matrix[_band(score)]
+
+
+# Felten AIOE 분포에서 백분위 lookup 테이블 (한 번 계산)
+_AIOE_SORTED: list[float] | None = None
+
+
+def _aioe_percentile(aioe_raw: float) -> int:
+    """AIOE 원본값의 *상위* 백분위 (1=최상위, 100=최하위)."""
+    global _AIOE_SORTED
+    if _AIOE_SORTED is None:
+        _AIOE_SORTED = sorted((float(v["aioe_raw"]) for v in FELTEN_AIOE.values()), reverse=True)
+    if not _AIOE_SORTED:
+        return 50
+    # 상위에서 몇 번째인지
+    rank = sum(1 for x in _AIOE_SORTED if x > aioe_raw) + 1
+    return max(1, min(100, round(rank / len(_AIOE_SORTED) * 100)))
+
+
+def calc_exposure(title: str, big: str) -> tuple[int, str, str, str]:
+    """0~10 점수 + rationale(자연어) + cite(출처 한 줄) + source('Felten 2021' or '휴리스틱')."""
     # 1) Felten et al. 2021 AIOE 점수 우선 (학술 근거)
     f = FELTEN_AIOE.get(title)
     if f:
         score = int(f["aioe_score10"])
-        extra = f"(Felten et al. 2021, US '{f['en_title']}' SOC {f['soc']}, AIOE={f['aioe_raw']:+.2f} → {score}/10)"
-        return score, _exposure_rationale(score, "Felten 2021", extra), "Felten 2021"
+        rationale = _exposure_rationale(score, big)
+        pct = _aioe_percentile(float(f["aioe_raw"]))
+        cite = (
+            f"Felten et al. 2021 · {f['en_title']} (SOC {f['soc']}) · "
+            f"AIOE {float(f['aioe_raw']):+.2f} (상위 {pct}%) → {score}/10"
+        )
+        return score, rationale, cite, "Felten 2021"
 
     # 2) 휴리스틱 fallback
-    score = _heuristic_exposure(title, big)
+    score, matched_kw = _heuristic_exposure(title, big)
+    rationale = _exposure_rationale(score, big)
     base = BIG_BASE_EXPOSURE.get(big, 5.0)
-    extra = f"(휴리스틱: 대분류 기본 {base:.1f}점, 직업명 키워드 가중)"
-    return score, _exposure_rationale(score, "휴리스틱", extra), "휴리스틱"
+    if matched_kw:
+        kw_str = "·".join(matched_kw[:3])
+        cite = f"휴리스틱 · 대분류 기본 {base:.1f}점 + 직업명 키워드 [{kw_str}]"
+    else:
+        cite = f"휴리스틱 · 대분류 기본 {base:.1f}점만 적용 (매칭 키워드 없음)"
+    return score, rationale, cite, "휴리스틱"
 
 
 # ── 향후 전망 점수 (-10 ~ +20%) ────────────────────────────────────────────
@@ -581,7 +674,7 @@ def main():
             pay_estimated = adjust_pay(j["title"], base_pay)
             outlook, outlook_desc = calc_outlook(j["title"], big)
             education = estimate_education(j["title"], big)
-            exposure, rationale, exposure_source = calc_exposure(j["title"], big)
+            exposure, rationale, exposure_cite, exposure_source = calc_exposure(j["title"], big)
 
             # career.go.kr 실제 임금이 있으면 우선 사용 (정확도 ★)
             extra = career_extra(j["title"])
@@ -617,6 +710,7 @@ def main():
                     "education": education,
                     "exposure": exposure,
                     "exposure_rationale": rationale,
+                    "exposure_cite": exposure_cite,
                     "exposure_source": exposure_source,
                     "url": career_url(j["title"]),
                     "career_seq": CAREER_SEQ.get(j["title"]),

@@ -935,16 +935,44 @@ body::after {
   margin-top: 11px;
   padding-top: 9px;
   border-top: 1px dashed var(--rule);
+}
+#tt .rationale .src-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  margin: 0 6px 5px 0;
+  background: var(--ink-mute);
+  color: var(--paper);
+  border-radius: 1px;
+  vertical-align: 1px;
+}
+#tt .rationale .src-badge.felten { background: var(--maple-deep); }
+#tt .rationale .src-badge.heur { background: var(--ink-mute); }
+#tt .rationale .rt-text {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 12.5px;
+  line-height: 1.55;
   color: var(--ink-soft);
 }
-#tt .rationale b {
+#tt .rationale .cite {
+  margin-top: 6px;
+  font-family: var(--mono);
   font-style: normal;
-  font-weight: 600;
-  color: var(--ink);
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--ink-mute);
+  letter-spacing: 0.01em;
+  padding-left: 8px;
+  border-left: 2px solid var(--rule);
+}
+#tt .rationale .cite.felten {
+  border-left-color: var(--maple-deep);
+  color: var(--ink-soft);
 }
 #tt .hint {
   margin-top: 9px;
@@ -1629,7 +1657,12 @@ function showTip(d, mx, my) {
       <span class="l">주요 학력</span><span class="v">${d.education || "—"}</span>`;
     if (d.exposure_rationale) {
       $(".rationale").hidden = false;
-      $(".rationale").innerHTML = d.exposure_rationale;
+      const isFelten = d.exposure_source === "Felten 2021";
+      const srcLabel = isFelten ? "Felten 2021" : "휴리스틱";
+      const cite = d.exposure_cite ? `<div class="cite ${isFelten ? 'felten' : ''}">${esc(d.exposure_cite)}</div>` : "";
+      $(".rationale").innerHTML =
+        `<span class="src-badge ${isFelten ? 'felten' : 'heur'}">${srcLabel}</span>` +
+        `<span class="rt-text">${esc(d.exposure_rationale)}</span>` + cite;
     } else {
       $(".rationale").hidden = true;
     }
