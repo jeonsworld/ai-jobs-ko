@@ -489,7 +489,16 @@ body::after {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  position: sticky;
+  top: 16px;
+  align-self: start;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-gutter: stable;
 }
+/* 사이드 내부 스크롤 시 패널 사이에 그림자 분리 */
+.side > .panel { flex-shrink: 0; }
 .panel {
   border: 1px solid var(--ink);
   background: var(--paper-deep);
@@ -1078,14 +1087,14 @@ body::after {
         </div>
       </div>
 
-      <div class="panel">
-        <h3 id="catTitle">카테고리 <span class="num" id="catCount">— 개</span></h3>
-        <div class="catlist" id="catList"></div>
-      </div>
-
       <div class="panel" id="detailPanel">
         <h3>직업 상세 <span class="num">클릭하여 변경</span></h3>
         <div class="detail" id="detail"></div>
+      </div>
+
+      <div class="panel panel-cat">
+        <h3 id="catTitle">카테고리 <span class="num" id="catCount">— 개</span></h3>
+        <div class="catlist" id="catList"></div>
       </div>
     </aside>
   </div>
@@ -1386,7 +1395,9 @@ function layout() {
   const wrap = canvas.parentElement;
   const w = wrap.clientWidth;
   const headerH = view === "category" ? 56 + 76 : 56;
-  const h = Math.max(720, Math.round(w * 0.62));
+  // 트리맵 높이: 화면 가로의 ~78%, 단 뷰포트 안에 들어오게 max는 (window.innerHeight - 60)
+  const targetH = Math.round(w * 0.78);
+  const h = Math.max(720, Math.min(targetH, window.innerHeight - 40));
   canvas.width = w * dpr; canvas.height = (h - headerH) * dpr;
   canvas.style.width = w + "px"; canvas.style.height = (h - headerH) + "px";
   canvas.style.marginTop = headerH + "px";
