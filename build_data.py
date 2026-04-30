@@ -597,10 +597,11 @@ def main():
             for r in recs:
                 r["series"][yi] = int(round(r["series"][yi] * scale))
 
-    # 2024년(idx 9) 시리즈 값을 jobs와 일치시킴 (사이트 로드 기본 연도)
-    Y2024 = TS_YEARS.index(2024)
+    # 사이트 로드 기본 연도 = 2026 (현재). jobs 필드도 2026 시리즈 값으로 일치
+    DEFAULT_YEAR = 2026
+    Y_BASE = TS_YEARS.index(DEFAULT_YEAR)
     for r in job_records:
-        r["jobs"] = r["series"][Y2024]
+        r["jobs"] = r["series"][Y_BASE]
 
     # 정렬: 대분류 → 중분류 → 취업자 내림차순
     job_records.sort(key=lambda r: (r["category"], -r["jobs"]))
@@ -608,7 +609,7 @@ def main():
     os.makedirs("site", exist_ok=True)
     with open("site/data.json", "w", encoding="utf-8") as f:
         json.dump(
-            {"years": TS_YEARS, "default_year": 2024, "jobs": job_records},
+            {"years": TS_YEARS, "default_year": DEFAULT_YEAR, "jobs": job_records},
             f,
             ensure_ascii=False,
             indent=None,

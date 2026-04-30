@@ -987,7 +987,7 @@ body::after {
 
   <!-- 시계열 슬라이더 (Career Time Machine) -->
   <div class="timebar">
-    <div class="tb-label">Time Machine ／ <em id="tbYear">2024</em>년</div>
+    <div class="tb-label">Time Machine ／ <em id="tbYear">2026</em>년</div>
     <button class="tb-play" id="tbPlay" aria-label="재생">
       <span class="tb-icon" id="tbIcon">▶</span>
     </button>
@@ -995,7 +995,7 @@ body::after {
       <div class="tb-marks" id="tbMarks"></div>
       <input type="range" id="tbRange" min="0" max="15" step="1" value="9" />
       <div class="tb-axis">
-        <span>2015</span><span>2020</span><span>2024</span><span>2030</span>
+        <span>2015</span><span>2020</span><span>2026</span><span>2030</span>
       </div>
     </div>
     <div class="tb-now" id="tbNow">—</div>
@@ -1006,7 +1006,7 @@ body::after {
     <div class="kpi">
       <div class="lbl">전체 취업자</div>
       <div class="val" id="kTot">—<span class="unit">만 명</span></div>
-      <div class="sub">2024년 KOSIS 직업별 취업자</div>
+      <div class="sub" id="kTotSub">2026년 추정</div>
     </div>
     <div class="kpi">
       <div class="lbl"><span id="kHd">평균 노출도</span></div>
@@ -1242,11 +1242,12 @@ let hovered = null;
 
 // ── 시계열 상태 ───────────────────────────────────────
 let YEARS = [];                  // [2015..2030]
-let YEAR_IDX_F = 9;              // 0..15, 부동소수 (보간용). 9 = 2024
+let BASE_IDX = 11;               // default_year의 idx (2026 → 11). load 시 갱신.
+let YEAR_IDX_F = 11;             // 부동소수 (보간용). 초기값 = BASE_IDX
 let CAT_ORDER = [];              // 카테고리 순서 (시간 무관 고정)
 let JOB_ORDER_BY_CAT = {};       // {cat: [job, ...]} 카테고리별 직업 순서 고정
-let LAYOUT_SNAPSHOTS = null;     // {categories:[16][numCats], jobsByCat:{cat:[16][numJobs]}}
-let LAYOUT_GEOM = null;          // {w, h, headerH, PAD, view, activeCat}
+let LAYOUT_SNAPSHOTS = null;
+let LAYOUT_GEOM = null;
 
 // 현재 연도(보간 포함)에서 직업의 jobs 수 반환
 function jobsAt(d, yearIdxFloat) {
@@ -1257,18 +1258,18 @@ function jobsAt(d, yearIdxFloat) {
   return d.series[i0] * (1 - t) + d.series[i1] * t;
 }
 
-// 카테고리/직업 순서를 한 번만 정함 (기준: 2024년 jobs 내림차순)
+// 카테고리/직업 순서를 한 번만 정함 (기준 연도 jobs 내림차순)
 function computeOrders() {
   const byCat = {};
   for (const d of DATA) {
-    if (!byCat[d.category]) byCat[d.category] = { cat: d.category, big: d.big_category, items: [], total2024: 0 };
+    if (!byCat[d.category]) byCat[d.category] = { cat: d.category, big: d.big_category, items: [], baseTot: 0 };
     byCat[d.category].items.push(d);
-    byCat[d.category].total2024 += jobsAt(d, 9);
+    byCat[d.category].baseTot += jobsAt(d, BASE_IDX);
   }
-  CAT_ORDER = Object.keys(byCat).sort((a, b) => byCat[b].total2024 - byCat[a].total2024);
+  CAT_ORDER = Object.keys(byCat).sort((a, b) => byCat[b].baseTot - byCat[a].baseTot);
   JOB_ORDER_BY_CAT = {};
   for (const c of CAT_ORDER) {
-    JOB_ORDER_BY_CAT[c] = byCat[c].items.slice().sort((a, b) => jobsAt(b, 9) - jobsAt(a, 9));
+    JOB_ORDER_BY_CAT[c] = byCat[c].items.slice().sort((a, b) => jobsAt(b, BASE_IDX) - jobsAt(a, BASE_IDX));
   }
 }
 
@@ -1935,11 +1936,11 @@ function currentYearLabel() {
 }
 
 function updateTbNow() {
-  // 현 시점 vs 2024 차이를 한눈에
+  // 현 시점 vs 기준 연도(default_year) 차이
   let total = 0;
   for (const d of DATA) total += jobsAt(d, YEAR_IDX_F);
   let baseTotal = 0;
-  for (const d of DATA) baseTotal += jobsAt(d, 9);  // 2024
+  for (const d of DATA) baseTotal += jobsAt(d, BASE_IDX);
   const delta = (total - baseTotal) / baseTotal * 100;
   const dStr = delta > 0.05 ? `<span class="delta up">▲ ${delta.toFixed(1)}%</span>`
             : delta < -0.05 ? `<span class="delta dn">▼ ${Math.abs(delta).toFixed(1)}%</span>`
@@ -1952,13 +1953,16 @@ fetch("data.json").then(r => r.json()).then(d => {
   // 새 형식 {years, default_year, jobs} 또는 옛 배열 호환
   if (Array.isArray(d)) {
     DATA = d;
-    YEARS = [2024];
+    YEARS = [2026];
+    BASE_IDX = 0;
     YEAR_IDX_F = 0;
   } else {
     DATA = d.jobs;
     YEARS = d.years;
-    YEAR_IDX_F = YEARS.indexOf(d.default_year || 2024);
-    if (YEAR_IDX_F < 0) YEAR_IDX_F = Math.floor(YEARS.length / 2);
+    const def = d.default_year || 2026;
+    BASE_IDX = YEARS.indexOf(def);
+    if (BASE_IDX < 0) BASE_IDX = Math.floor(YEARS.length / 2);
+    YEAR_IDX_F = BASE_IDX;
   }
   computeOrders();
   setupTimebar();
