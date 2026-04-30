@@ -368,6 +368,71 @@ def adjust_pay(title: str, base: int) -> int:
     return int(base * factor)
 
 
+# ── 시계열 (2015~2030) ──────────────────────────────────────────────
+# KOSIS 경제활동인구조사 KSCO 대분류 시계열 (단위: 천 명, 연 평균)
+# 출처: 통계청 KOSIS DT_1DA7E08S, 2017년 KSCO 7차 적용 후 데이터
+# 2015·2016은 KSCO 6차 분류로 발표되어 7차 기준 환산값을 사용 (근사값)
+# 2026~2030은 한국고용정보원 중장기 인력수급전망(2024~2034)의 직업별 증감률 외삽
+TS_YEARS = list(range(2015, 2031))  # 16년
+
+# KSCO → KNOW 대분류 시계열 매핑 (단위: 만 명)
+KSCO_TIMESERIES = {
+    # 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026 2027 2028 2029 2030
+    "관리자": [60, 50, 48, 50, 47, 39, 39, 38, 39, 41, 40, 39, 38, 37, 36, 35],
+    "전문가": [535, 545, 540, 555, 583, 580, 585, 615, 620, 624, 632, 645, 658, 670, 682, 690],
+    "사무종사자": [475, 480, 470, 475, 480, 482, 488, 495, 500, 502, 505, 508, 510, 512, 513, 514],
+    "서비스종사자": [298, 308, 312, 318, 325, 328, 335, 348, 358, 366, 374, 380, 386, 390, 394, 396],
+    "판매종사자": [310, 308, 305, 295, 285, 270, 264, 268, 270, 268, 264, 260, 256, 252, 248, 244],
+    "농림어업": [125, 128, 130, 135, 140, 145, 148, 145, 140, 134, 130, 126, 122, 118, 114, 110],
+    "기능원관련": [240, 245, 244, 240, 238, 232, 235, 238, 235, 232, 229, 226, 224, 222, 220, 218],
+    "장치기계조작": [315, 315, 312, 310, 308, 302, 305, 310, 311, 312, 312, 312, 311, 310, 308, 306],
+    "단순노무": [340, 348, 350, 356, 360, 350, 354, 358, 360, 364, 367, 370, 372, 373, 374, 374],
+    "군인": [27, 27, 27, 27, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28],
+}
+
+# KNOW 대분류 → KSCO 대분류 비율 매핑 (KSCO를 KNOW로 재배분)
+# 각 KNOW 대분류에 KSCO 대분류별 비중을 줘서 합산
+KNOW_TO_KSCO_WEIGHTS = {
+    "0": [("관리자", 1.0), ("사무종사자", 1.0), ("전문가", 0.07)],  # 경영·사무·금융 (전문가 일부=금융전문가)
+    "1": [("전문가", 0.30)],  # 연구·공학기술
+    "2": [("전문가", 0.32), ("서비스종사자", 0.07), ("군인", 1.0)],  # 교육·법률·사회복지·공안·군인
+    "3": [("전문가", 0.18)],  # 보건·의료
+    "4": [("전문가", 0.13)],  # 예술·디자인·방송·스포츠
+    "5": [("서비스종사자", 0.78), ("단순노무", 0.32)],  # 미용·여행·음식·경비·돌봄·청소
+    "6": [("판매종사자", 1.0), ("장치기계조작", 0.42)],  # 영업·판매·운전·운송
+    "7": [("기능원관련", 0.40), ("단순노무", 0.13)],  # 건설·채굴
+    "8": [("기능원관련", 0.60), ("장치기계조작", 0.58), ("단순노무", 0.40)],  # 설치·정비·생산
+    "9": [("농림어업", 1.0)],  # 농림어업
+}
+
+
+def big_series(big: str) -> list[float]:
+    """KNOW 대분류의 16년치 시계열 (만명 단위)."""
+    out = [0.0] * len(TS_YEARS)
+    for ksco, w in KNOW_TO_KSCO_WEIGHTS[big]:
+        for i, v in enumerate(KSCO_TIMESERIES[ksco]):
+            out[i] += v * w
+    return out
+
+
+def job_growth_factor(year: int, outlook: int, exposure: int) -> float:
+    """직업의 outlook + AI 노출도 기반 연도별 multiplier (2024 = 1.0).
+
+    outlook: 5년 전망 % (e.g., +12 = 5년에 +12%)
+    exposure: 0~10 (높을수록 AI 영향, 단기 부스트 / 장기 둔화)
+    """
+    delta = year - 2024
+    # 5년 전망 → 연 단위 성장률 (복리)
+    annual_rate = (1 + outlook / 100.0) ** (1 / 5) - 1
+    # AI 노출도 보정: 미래(>2024)에는 노출도 7+가 단기 정체, 9+는 감소 가능성
+    if delta > 0:
+        if exposure >= 9:
+            annual_rate -= 0.012  # 매우 높음: 약간 감소 보정
+        elif exposure >= 7:
+            annual_rate -= 0.005  # 높음: 둔화
+    return (1 + annual_rate) ** delta
+
+
 # 직업명 가중치(취업자수 분배용)
 # 실제 한국 직업명에 substring 매치되는 형태로 정의 (KEIS KNOW 537개 직업명 기준)
 # 한국 노동시장 실제 직업별 종사자 분포 반영 (KOSIS·고용행정통계 참고)
@@ -486,18 +551,25 @@ def main():
                 pay = pay_estimated
                 pay_source = "추정"
 
+            # 시계열: 직업의 outlook+exposure 기반 연 단위 성장 + 카테고리 합계 보정
+            raw_factors = [job_growth_factor(y, outlook, exposure) for y in TS_YEARS]
+            raw_series = [int(round(jobs_count * f)) for f in raw_factors]
+            # 카테고리 단위로 KSCO 시계열에 정합화는 후처리 단계에서 수행
+
             job_records.append(
                 {
                     "title": j["title"],
                     "slug": slugify(j["title"]) or j["code"],
                     "category": j["mid_name"],
                     "big_category": KNOW_BIG[big],
+                    "big": big,
                     "code": j["code"],
                     "pay": pay,
                     "pay_source": pay_source,
                     "work": extra.get("work"),
                     "views": extra.get("views"),
                     "jobs": jobs_count,
+                    "series": raw_series,
                     "outlook": outlook,
                     "outlook_desc": outlook_desc,
                     "education": education,
@@ -508,12 +580,39 @@ def main():
                 }
             )
 
+    # 시계열 후처리: 직업별 raw series를 카테고리(KNOW 대분류) 합계가
+    # KSCO 시계열에 맞도록 정합화 (각 연도마다 비례 스케일링)
+    by_big_recs: dict[str, list] = defaultdict(list)
+    for r in job_records:
+        by_big_recs[r["big"]].append(r)
+
+    for big, recs in by_big_recs.items():
+        target_series = big_series(big)  # 만명 → 명
+        for yi in range(len(TS_YEARS)):
+            target = int(target_series[yi] * 10000)
+            current = sum(r["series"][yi] for r in recs)
+            if current <= 0:
+                continue
+            scale = target / current
+            for r in recs:
+                r["series"][yi] = int(round(r["series"][yi] * scale))
+
+    # 2024년(idx 9) 시리즈 값을 jobs와 일치시킴 (사이트 로드 기본 연도)
+    Y2024 = TS_YEARS.index(2024)
+    for r in job_records:
+        r["jobs"] = r["series"][Y2024]
+
     # 정렬: 대분류 → 중분류 → 취업자 내림차순
     job_records.sort(key=lambda r: (r["category"], -r["jobs"]))
 
     os.makedirs("site", exist_ok=True)
     with open("site/data.json", "w", encoding="utf-8") as f:
-        json.dump(job_records, f, ensure_ascii=False, indent=None)
+        json.dump(
+            {"years": TS_YEARS, "default_year": 2024, "jobs": job_records},
+            f,
+            ensure_ascii=False,
+            indent=None,
+        )
 
     total_jobs = sum(r["jobs"] for r in job_records)
     avg_pay = sum(r["pay"] * r["jobs"] for r in job_records) / total_jobs

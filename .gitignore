@@ -13,3 +13,5 @@ __pycache__/
 # 스크린샷 (수십 MB)
 *.png
 !docs/*.png
+.idea/
+data/career_mapping.json

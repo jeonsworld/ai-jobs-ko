@@ -225,6 +225,118 @@ body::after {
   border: 1px solid var(--ink);
 }
 
+/* ── Time Machine 슬라이더 ──────────────────────── */
+.timebar {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  margin: 0 0 18px;
+  border: 1px solid var(--ink);
+  background: var(--paper-deep);
+  position: relative;
+}
+.timebar .tb-label {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-soft);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.timebar .tb-label em {
+  font-family: var(--serif);
+  font-weight: 800;
+  font-style: normal;
+  font-size: 22px;
+  color: var(--maple);
+  letter-spacing: -0.01em;
+  margin-left: 2px;
+}
+.timebar .tb-play {
+  width: 36px; height: 36px;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink);
+  font-family: var(--mono);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+  border-radius: 0;
+}
+.timebar .tb-play:hover { background: var(--ink); color: var(--paper); }
+.timebar .tb-play.playing { background: var(--maple); color: var(--paper); border-color: var(--maple); }
+.timebar .tb-slider { position: relative; padding: 4px 6px 0; min-width: 0; }
+.timebar input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(to right, var(--celadon) 0%, var(--paper-shade) 60%, var(--maple) 100%);
+  outline: none;
+  border: 1px solid var(--ink);
+  margin: 0 0 4px;
+  cursor: pointer;
+  border-radius: 0;
+}
+.timebar input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 22px;
+  background: var(--ink);
+  border: 0;
+  cursor: grab;
+  border-radius: 1px;
+  box-shadow: 1px 2px 0 rgba(0,0,0,0.4);
+}
+.timebar input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; background: var(--maple); }
+.timebar input[type="range"]::-moz-range-thumb {
+  width: 18px; height: 22px;
+  background: var(--ink);
+  border: 0;
+  cursor: grab;
+  border-radius: 1px;
+}
+.timebar .tb-axis {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-mute);
+  letter-spacing: 0.06em;
+  padding: 0 2px;
+  user-select: none;
+}
+.timebar .tb-now {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+  text-align: right;
+  white-space: nowrap;
+  min-width: 100px;
+}
+.timebar .tb-now b { color: var(--ink); font-weight: 700; }
+.timebar .tb-now .delta {
+  display: inline-block;
+  margin-left: 4px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 11px;
+}
+.timebar .tb-now .delta.up { color: var(--leaf); }
+.timebar .tb-now .delta.dn { color: var(--maple-deep); }
+@media (max-width: 760px) {
+  .timebar { grid-template-columns: auto 1fr; row-gap: 10px; }
+  .timebar .tb-now { grid-column: 1 / -1; text-align: left; }
+}
+
 /* ── KPI 스트립 ─────────────────────────── */
 .kpis {
   display: grid;
@@ -850,6 +962,22 @@ body::after {
     </div>
   </div>
 
+  <!-- 시계열 슬라이더 (Career Time Machine) -->
+  <div class="timebar">
+    <div class="tb-label">Time Machine ／ <em id="tbYear">2024</em>년</div>
+    <button class="tb-play" id="tbPlay" aria-label="재생">
+      <span class="tb-icon" id="tbIcon">▶</span>
+    </button>
+    <div class="tb-slider">
+      <div class="tb-marks" id="tbMarks"></div>
+      <input type="range" id="tbRange" min="0" max="15" step="1" value="9" />
+      <div class="tb-axis">
+        <span>2015</span><span>2020</span><span>2024</span><span>2030</span>
+      </div>
+    </div>
+    <div class="tb-now" id="tbNow">—</div>
+  </div>
+
   <!-- KPI 스트립 -->
   <div class="kpis">
     <div class="kpi">
@@ -1089,17 +1217,46 @@ let dpr = window.devicePixelRatio || 1;
 let rects = [];
 let hovered = null;
 
-function buildCategories() {
-  const m = {};
+// ── 시계열 상태 ───────────────────────────────────────
+let YEARS = [];                  // [2015..2030]
+let YEAR_IDX_F = 9;              // 0..15, 부동소수 (보간용). 9 = 2024
+let CAT_ORDER = [];              // 카테고리 순서 (시간 무관 고정)
+let JOB_ORDER_BY_CAT = {};       // {cat: [job, ...]} 카테고리별 직업 순서 고정
+let LAYOUT_SNAPSHOTS = null;     // {categories:[16][numCats], jobsByCat:{cat:[16][numJobs]}}
+let LAYOUT_GEOM = null;          // {w, h, headerH, PAD, view, activeCat}
+
+// 현재 연도(보간 포함)에서 직업의 jobs 수 반환
+function jobsAt(d, yearIdxFloat) {
+  if (!d.series) return d.jobs || 0;
+  const i0 = Math.floor(yearIdxFloat);
+  const i1 = Math.min(i0 + 1, d.series.length - 1);
+  const t = yearIdxFloat - i0;
+  return d.series[i0] * (1 - t) + d.series[i1] * t;
+}
+
+// 카테고리/직업 순서를 한 번만 정함 (기준: 2024년 jobs 내림차순)
+function computeOrders() {
+  const byCat = {};
   for (const d of DATA) {
-    const c = m[d.category] || (m[d.category] = { cat: d.category, big: d.big_category, items: [], jobs: 0 });
-    c.items.push(d);
-    c.jobs += d.jobs || 0;
+    if (!byCat[d.category]) byCat[d.category] = { cat: d.category, big: d.big_category, items: [], total2024: 0 };
+    byCat[d.category].items.push(d);
+    byCat[d.category].total2024 += jobsAt(d, 9);
   }
-  for (const c of Object.values(m)) {
+  CAT_ORDER = Object.keys(byCat).sort((a, b) => byCat[b].total2024 - byCat[a].total2024);
+  JOB_ORDER_BY_CAT = {};
+  for (const c of CAT_ORDER) {
+    JOB_ORDER_BY_CAT[c] = byCat[c].items.slice().sort((a, b) => jobsAt(b, 9) - jobsAt(a, 9));
+  }
+}
+
+// 한 시점(t년)의 카테고리 메타 + 평균값 계산
+function buildCategoriesAt(yearIdxFloat) {
+  const result = [];
+  for (const cat of CAT_ORDER) {
+    const items = JOB_ORDER_BY_CAT[cat];
     let totJ = 0, sumExp = 0, sumPay = 0, sumOl = 0, sumEdu = 0;
-    for (const d of c.items) {
-      const j = d.jobs || 0;
+    for (const d of items) {
+      const j = jobsAt(d, yearIdxFloat);
       totJ += j;
       if (d.exposure != null) sumExp += d.exposure * j;
       if (d.pay != null) sumPay += d.pay * j;
@@ -1107,19 +1264,81 @@ function buildCategories() {
       const i = EDU_LEVELS.indexOf(d.education);
       if (i >= 0) sumEdu += i * j;
     }
-    c.avg_exposure = totJ > 0 ? sumExp / totJ : 0;
-    c.avg_pay = totJ > 0 ? sumPay / totJ : 0;
-    c.avg_outlook = totJ > 0 ? sumOl / totJ : 0;
-    c.avg_edu = totJ > 0 ? sumEdu / totJ : 0;
+    result.push({
+      cat, big: items[0]?.big_category, items,
+      jobs: totJ,
+      avg_exposure: totJ > 0 ? sumExp / totJ : 0,
+      avg_pay: totJ > 0 ? sumPay / totJ : 0,
+      avg_outlook: totJ > 0 ? sumOl / totJ : 0,
+      avg_edu: totJ > 0 ? sumEdu / totJ : 0,
+    });
   }
-  return Object.values(m).sort((a, b) => b.jobs - a.jobs);
+  return result;
 }
 let CATS = [];
+
+// ── Layout snapshot 빌드 (16개 연도 × overview/category) ─────────
+function rebuildSnapshots(geom) {
+  LAYOUT_GEOM = geom;
+  const { tw, th, PAD } = geom;
+
+  // 1) 카테고리 트리맵: 16개 연도 layout
+  const catSnaps = [];
+  for (let yi = 0; yi < YEARS.length; yi++) {
+    const items = CAT_ORDER.map((cat) => {
+      const its = JOB_ORDER_BY_CAT[cat];
+      const tot = its.reduce((s, d) => s + jobsAt(d, yi), 0);
+      return { cat, value: Math.max(tot, 1) };
+    });
+    const r = squarify(items, PAD, PAD, tw, th);
+    catSnaps.push(r);
+  }
+  // 2) 카테고리별 직업 트리맵: 카테고리 진입 시 동적 — 캐시는 활성 카테고리만
+  return catSnaps;
+}
+
+// 카테고리별 직업 layout 캐시 (활성화될 때 빌드)
+const JOBS_LAYOUT_CACHE = {};   // key = `${cat}|${tw}x${th}` → snapshots[16]
+function getJobsSnapshots(cat, geom) {
+  const key = `${cat}|${geom.tw.toFixed(1)}x${geom.th.toFixed(1)}|${geom.PAD}`;
+  if (JOBS_LAYOUT_CACHE[key]) return JOBS_LAYOUT_CACHE[key];
+  const items_meta = JOB_ORDER_BY_CAT[cat];
+  const snaps = [];
+  for (let yi = 0; yi < YEARS.length; yi++) {
+    const items = items_meta.map((d) => ({ ref: d, value: Math.max(jobsAt(d, yi), 1) }));
+    const r = squarify(items, geom.PAD, geom.PAD, geom.tw, geom.th);
+    snaps.push(r);
+  }
+  JOBS_LAYOUT_CACHE[key] = snaps;
+  return snaps;
+}
+
+// 연도(yearIdxFloat) 기준으로 두 snapshot 사이 보간된 rect 배열 반환
+function lerpSnapshots(snapsArr, yearIdxFloat) {
+  const i0 = Math.floor(yearIdxFloat);
+  const i1 = Math.min(i0 + 1, snapsArr.length - 1);
+  const t = yearIdxFloat - i0;
+  const A = snapsArr[i0], B = snapsArr[i1];
+  const out = [];
+  for (let k = 0; k < A.length; k++) {
+    const a = A[k], b = B[k];
+    out.push({
+      ...a,
+      rx: a.rx * (1 - t) + b.rx * t,
+      ry: a.ry * (1 - t) + b.ry * t,
+      rw: a.rw * (1 - t) + b.rw * t,
+      rh: a.rh * (1 - t) + b.rh * t,
+    });
+  }
+  return out;
+}
+
+let CAT_SNAPS = null;            // 카테고리 overview snapshot 16
 
 function layout() {
   const wrap = canvas.parentElement;
   const w = wrap.clientWidth;
-  const headerH = view === "category" ? 56 + 76 : 56;  // crumbs + (zoomHead)
+  const headerH = view === "category" ? 56 + 76 : 56;
   const h = Math.max(720, Math.round(w * 0.62));
   canvas.width = w * dpr; canvas.height = (h - headerH) * dpr;
   canvas.style.width = w + "px"; canvas.style.height = (h - headerH) + "px";
@@ -1128,20 +1347,32 @@ function layout() {
 
   const PAD = 6;
   const tw = w - PAD * 2, th = h - headerH - PAD * 2;
+  const geom = { tw, th, PAD };
+
+  // overview snapshot은 기하가 변할 때만 재빌드
+  const geomKey = `${tw.toFixed(1)}x${th.toFixed(1)}|${PAD}`;
+  if (!CAT_SNAPS || CAT_SNAPS.__geomKey !== geomKey) {
+    CAT_SNAPS = rebuildSnapshots(geom);
+    CAT_SNAPS.__geomKey = geomKey;
+    // 기하 변경 시 직업 캐시 무효화
+    for (const k in JOBS_LAYOUT_CACHE) delete JOBS_LAYOUT_CACHE[k];
+  }
+
+  // 현재 연도의 보간된 layout 뽑기
   rects = [];
+  CATS = buildCategoriesAt(YEAR_IDX_F);
   if (view === "categories") {
-    const items = CATS.map(c => ({ ...c, value: c.jobs }));
-    const r = squarify(items, PAD, PAD, tw, th);
-    rects = r.map(it => ({ ...it, kind: "cat" }));
+    const lerped = lerpSnapshots(CAT_SNAPS, YEAR_IDX_F);
+    rects = lerped.map((r, i) => ({ ...CATS[i], ...r, kind: "cat" }));
   } else {
     const cat = CATS.find(c => c.cat === activeCat);
     if (!cat) return;
-    const items = cat.items
-      .slice()
-      .sort((a, b) => (b.jobs || 0) - (a.jobs || 0))
-      .map(d => ({ ...d, value: Math.max(d.jobs || 1, 1) }));
-    const r = squarify(items, PAD, PAD, tw, th);
-    rects = r.map(it => ({ ...it, kind: "job" }));
+    const snaps = getJobsSnapshots(cat.cat, geom);
+    const lerped = lerpSnapshots(snaps, YEAR_IDX_F);
+    rects = lerped.map((r) => {
+      const d = r.ref;
+      return { ...d, jobs: jobsAt(d, YEAR_IDX_F), rx: r.rx, ry: r.ry, rw: r.rw, rh: r.rh, kind: "job" };
+    });
   }
 }
 
@@ -1314,7 +1545,7 @@ function showTip(d, mx, my) {
       <span class="l">월임금 환산</span><span class="v">${formatMonthly(Math.round(d.avg_pay))}</span>
       <span class="l">5년 전망</span><span class="v">${d.avg_outlook > 0 ? "+" : ""}${d.avg_outlook.toFixed(1)}% <small>${outlookDesc(d.avg_outlook)}</small></span>
       <span class="l">대표 학력</span><span class="v">${EDU_LEVELS[Math.round(d.avg_edu)] || "—"}</span>
-      <span class="l">전체 비중</span><span class="v">${(d.jobs / DATA.reduce((s, x) => s + (x.jobs || 0), 0) * 100).toFixed(1)}%</span>`;
+      <span class="l">전체 비중</span><span class="v">${(d.jobs / DATA.reduce((s, x) => s + jobsAt(x, YEAR_IDX_F), 0) * 100).toFixed(1)}%</span>`;
     $(".rationale").hidden = true;
     $(".hint").textContent = "클릭하여 직업 펼쳐보기 →";
   } else {
@@ -1424,10 +1655,11 @@ function enterCategory(cat) {
   view = "category";
   activeCat = cat;
   const c = CATS.find(x => x.cat === cat);
+  const yLabel = currentYearLabel();
   document.getElementById("zoomHead").classList.add("show");
   document.getElementById("zoomName").textContent = cat;
   document.getElementById("zoomMeta").innerHTML =
-    `<b>${formatJobs(c.jobs)}</b> · <b>${c.items.length}개 직업</b> · 평균 연봉 <b>${formatPay(Math.round(c.avg_pay))}</b> · 평균 AI 노출 <b>${c.avg_exposure.toFixed(1)}/10</b> · 5년 전망 <b>${c.avg_outlook > 0 ? "+" : ""}${c.avg_outlook.toFixed(1)}%</b>`;
+    `${yLabel}년 · <b>${formatJobs(c.jobs)}</b> · <b>${c.items.length}개 직업</b> · 평균 연봉 <b>${formatPay(Math.round(c.avg_pay))}</b> · 평균 AI 노출 <b>${c.avg_exposure.toFixed(1)}/10</b>`;
   document.getElementById("crumbSep").style.display = "";
   document.getElementById("crumbHere").style.display = "";
   document.getElementById("crumbHere").textContent = cat;
@@ -1496,53 +1728,61 @@ qInput.addEventListener("input", () => {
 
 // ── KPI 업데이트 ────────────────────────────────────
 function updateKPIs() {
-  const total = DATA.reduce((s, d) => s + (d.jobs || 0), 0);
+  // 현재 연도(보간) 기반
+  const yi = YEAR_IDX_F;
+  const yLabel = currentYearLabel();
+  const totals = DATA.map(d => jobsAt(d, yi));
+  const total = totals.reduce((a, b) => a + b, 0);
   document.getElementById("kTot").innerHTML = `${(total / 1e4).toFixed(0)}<span class="unit">만 명</span>`;
+  const subTot = document.querySelector("#kTot")?.parentElement?.querySelector(".sub");
+  if (subTot) subTot.textContent = `${yLabel}년 기준`;
 
-  // 헤드라인 = 현재 모드
+  // 헤드라인
   let head, val, sub;
   if (mode === "exposure") {
     let s = 0, w = 0;
-    for (const d of DATA) if (d.exposure != null && d.jobs) { s += d.exposure * d.jobs; w += d.jobs; }
+    for (let i = 0; i < DATA.length; i++) { const d = DATA[i], j = totals[i]; if (d.exposure != null && j) { s += d.exposure * j; w += j; } }
     head = "평균 노출도 ／ AI";
     val = (s / w).toFixed(1);
-    sub = "0~10점 척도, 가중평균";
+    sub = `${yLabel}년, 0~10점 가중평균`;
   } else if (mode === "pay") {
     let s = 0, w = 0;
-    for (const d of DATA) if (d.pay != null && d.jobs) { s += d.pay * d.jobs; w += d.jobs; }
+    for (let i = 0; i < DATA.length; i++) { const d = DATA[i], j = totals[i]; if (d.pay != null && j) { s += d.pay * j; w += j; } }
     head = "평균 연봉";
     val = `${Math.round(s / w / 100) / 10}<span class="unit">천만원</span>`;
-    sub = "취업자 가중평균";
+    sub = `${yLabel}년, 취업자 가중평균`;
   } else if (mode === "outlook") {
     let s = 0, w = 0;
-    for (const d of DATA) if (d.outlook != null && d.jobs) { s += d.outlook * d.jobs; w += d.jobs; }
+    for (let i = 0; i < DATA.length; i++) { const d = DATA[i], j = totals[i]; if (d.outlook != null && j) { s += d.outlook * j; w += j; } }
     head = "평균 5년 전망";
     val = `${(s / w > 0 ? "+" : "")}${(s / w).toFixed(1)}<span class="unit">%</span>`;
-    sub = "취업자 가중평균";
+    sub = `${yLabel}년 기준`;
   } else {
     let bs = 0;
-    for (const d of DATA) if (d.jobs && ["대졸","석사","박사"].includes(d.education)) bs += d.jobs;
+    for (let i = 0; i < DATA.length; i++) { const d = DATA[i], j = totals[i]; if (j && ["대졸","석사","박사"].includes(d.education)) bs += j; }
     head = "대졸+ 일자리";
     val = `${(bs / 1e4).toFixed(0)}<span class="unit">만 명</span>`;
-    sub = "전체 대비 " + (bs / total * 100).toFixed(0) + "%";
+    sub = `${yLabel}년 · 전체 대비 ${(bs / total * 100).toFixed(0)}%`;
   }
   document.getElementById("kHd").textContent = head;
   document.getElementById("kVal").innerHTML = val;
   document.getElementById("kSub").textContent = sub;
 
   let exp7 = 0;
-  for (const d of DATA) if (d.exposure >= 7 && d.jobs && d.pay) exp7 += d.jobs * d.pay;
+  for (let i = 0; i < DATA.length; i++) { const d = DATA[i], j = totals[i]; if (d.exposure >= 7 && j && d.pay) exp7 += j * d.pay; }
   document.getElementById("kExp").innerHTML = `${(exp7 / 1e8).toFixed(0)}<span class="unit">조원/년</span>`;
 
   let bach = 0;
-  for (const d of DATA) if (d.jobs && ["대졸","석사","박사"].includes(d.education)) bach += d.jobs;
+  for (let i = 0; i < DATA.length; i++) { const d = DATA[i], j = totals[i]; if (j && ["대졸","석사","박사"].includes(d.education)) bach += j; }
   document.getElementById("kEdu").innerHTML = `${(bach / total * 100).toFixed(0)}<span class="unit">%</span>`;
 
+  // 감소·증가는 outlook 기반(직업 단위)
   let dec = 0, inc = 0;
-  for (const d of DATA) {
-    if (d.outlook == null || !d.jobs) continue;
-    if (d.outlook < 0) dec += d.jobs;
-    else if (d.outlook > 0) inc += d.jobs;
+  for (let i = 0; i < DATA.length; i++) {
+    const d = DATA[i], j = totals[i];
+    if (d.outlook == null || !j) continue;
+    if (d.outlook < 0) dec += j;
+    else if (d.outlook > 0) inc += j;
   }
   document.getElementById("kGrow").innerHTML =
     `<span style="color:var(--maple-deep)">${Math.round(dec / 1e4)}만</span><span class="unit"> ↘ </span><span style="color:var(--leaf)">${Math.round(inc / 1e4)}만</span>`;
@@ -1584,10 +1824,126 @@ function refresh() {
   if (view === "categories") renderCatList();
 }
 
+// ── 슬라이더 (Career Time Machine) ─────────────────────
+function setupTimebar() {
+  const range = document.getElementById("tbRange");
+  range.min = 0;
+  range.max = YEARS.length - 1;
+  range.step = 0.05;       // 부드러운 보간 가능
+  range.value = YEAR_IDX_F;
+
+  range.addEventListener("input", () => {
+    YEAR_IDX_F = parseFloat(range.value);
+    onTimeChange();
+  });
+
+  // 재생 버튼
+  const playBtn = document.getElementById("tbPlay");
+  let playing = false;
+  let raf = null;
+  let lastT = 0;
+  const SECONDS_PER_YEAR = 0.55;  // 각 연도당 약 0.55초
+
+  function tick(ts) {
+    if (!lastT) lastT = ts;
+    const dt = (ts - lastT) / 1000;
+    lastT = ts;
+    YEAR_IDX_F += dt / SECONDS_PER_YEAR;
+    if (YEAR_IDX_F >= YEARS.length - 1) {
+      YEAR_IDX_F = YEARS.length - 1;
+      stopPlay();
+      onTimeChange();
+      return;
+    }
+    range.value = YEAR_IDX_F;
+    onTimeChange();
+    raf = requestAnimationFrame(tick);
+  }
+  function startPlay() {
+    if (YEAR_IDX_F >= YEARS.length - 1) YEAR_IDX_F = 0;
+    playing = true;
+    lastT = 0;
+    document.getElementById("tbIcon").textContent = "⏸";
+    playBtn.classList.add("playing");
+    raf = requestAnimationFrame(tick);
+  }
+  function stopPlay() {
+    playing = false;
+    if (raf) cancelAnimationFrame(raf);
+    document.getElementById("tbIcon").textContent = "▶";
+    playBtn.classList.remove("playing");
+  }
+  playBtn.addEventListener("click", () => playing ? stopPlay() : startPlay());
+
+  // 키보드: 좌우 화살표로 ±1년
+  document.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT") return;
+    if (e.key === "ArrowLeft") { YEAR_IDX_F = Math.max(0, YEAR_IDX_F - 1); range.value = YEAR_IDX_F; onTimeChange(); }
+    if (e.key === "ArrowRight") { YEAR_IDX_F = Math.min(YEARS.length - 1, YEAR_IDX_F + 1); range.value = YEAR_IDX_F; onTimeChange(); }
+    if (e.key === " " && !e.target.matches("input,textarea")) { e.preventDefault(); playing ? stopPlay() : startPlay(); }
+  });
+}
+
+function onTimeChange() {
+  const yearStr = currentYearLabel();
+  document.getElementById("tbYear").textContent = yearStr;
+  // 현재 / 기준(2024) 대비 % 표시
+  updateTbNow();
+  // 카테고리 줌인 헤더도 갱신
+  if (view === "category") {
+    const c = CATS.find(x => x.cat === activeCat);
+    if (c) {
+      document.getElementById("zoomMeta").innerHTML =
+        `${yearStr}년 · <b>${formatJobs(c.jobs)}</b> · <b>${c.items.length}개 직업</b> · 평균 연봉 <b>${formatPay(Math.round(c.avg_pay))}</b> · 평균 AI 노출 <b>${c.avg_exposure.toFixed(1)}/10</b>`;
+    }
+  }
+  refresh();
+}
+
+function currentYearLabel() {
+  const i0 = Math.floor(YEAR_IDX_F);
+  const i1 = Math.min(i0 + 1, YEARS.length - 1);
+  const t = YEAR_IDX_F - i0;
+  if (t < 0.05) return YEARS[i0].toString();
+  if (t > 0.95) return YEARS[i1].toString();
+  // 분기 단위 라벨
+  const q = Math.round(t * 4);
+  return q === 0 ? `${YEARS[i0]}` : q === 4 ? `${YEARS[i1]}` : `${YEARS[i0]}.${q*3 < 10 ? "0" + q*3 : q*3}`;
+}
+
+function updateTbNow() {
+  // 현 시점 vs 2024 차이를 한눈에
+  let total = 0;
+  for (const d of DATA) total += jobsAt(d, YEAR_IDX_F);
+  let baseTotal = 0;
+  for (const d of DATA) baseTotal += jobsAt(d, 9);  // 2024
+  const delta = (total - baseTotal) / baseTotal * 100;
+  const dStr = delta > 0.05 ? `<span class="delta up">▲ ${delta.toFixed(1)}%</span>`
+            : delta < -0.05 ? `<span class="delta dn">▼ ${Math.abs(delta).toFixed(1)}%</span>`
+            : `<span class="delta">기준</span>`;
+  document.getElementById("tbNow").innerHTML = `<b>${(total / 1e4).toFixed(0)}만 명</b> ${dStr}`;
+}
+
 // ── 로드 ────────────────────────────────────────────
 fetch("data.json").then(r => r.json()).then(d => {
-  DATA = d;
-  CATS = buildCategories();
+  // 새 형식 {years, default_year, jobs} 또는 옛 배열 호환
+  if (Array.isArray(d)) {
+    DATA = d;
+    YEARS = [2024];
+    YEAR_IDX_F = 0;
+  } else {
+    DATA = d.jobs;
+    YEARS = d.years;
+    YEAR_IDX_F = YEARS.indexOf(d.default_year || 2024);
+    if (YEAR_IDX_F < 0) YEAR_IDX_F = Math.floor(YEARS.length / 2);
+  }
+  computeOrders();
+  setupTimebar();
+  // 슬라이더 표시 일치
+  const range = document.getElementById("tbRange");
+  if (range) { range.min = 0; range.max = YEARS.length - 1; range.value = YEAR_IDX_F; }
+  document.getElementById("tbYear").textContent = currentYearLabel();
+  updateTbNow();
   refresh();
 });
 window.addEventListener("resize", () => requestAnimationFrame(refresh));
