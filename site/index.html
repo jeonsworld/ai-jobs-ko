@@ -1105,18 +1105,21 @@ body::after {
       <h4>데이터 출처</h4>
       <ul>
         <li>직업 마스터 537 — 한국고용정보원 KNOW 직업분류 <a href="https://www.data.go.kr/data/15119096/fileData.do" target="_blank">data.go.kr 15119096</a></li>
-        <li>학력·전망 — KEIS 직업전망/교육훈련/학력 <a href="https://www.data.go.kr/data/15119098/fileData.do" target="_blank">15119098</a></li>
-        <li>대분류별 취업자 — KOSIS 경제활동인구조사 <a href="https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1DA7E08S" target="_blank">DT_1DA7E08S</a></li>
-        <li>임금 — 고용노동부 사업체노동력조사 + 임금근로일자리 행정통계</li>
-        <li>직업 상세 페이지 — 진로정보망 커리어넷 직업백과 <a href="https://www.career.go.kr/cloud/w/job/list" target="_blank">career.go.kr</a></li>
+        <li>5년 전망 텍스트(373) — KEIS 직업전망 <a href="https://www.data.go.kr/data/15119098/fileData.do" target="_blank">15119098</a></li>
+        <li>중장기 인력수급 2024-2034 (시계열 보정) — <a href="https://statistics.keis.or.kr/keis/ko/bbs/225/detail.do?pageIndex=1&pstSn=64329" target="_blank">한국고용정보원 발표</a></li>
+        <li>대분류별 취업자 — KOSIS 경제활동인구조사 <a href="https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1DA7E08S" target="_blank">DT_1DA7E08S</a> (2025년 8월 2,897만)</li>
+        <li>임금 — 고용노동부 사업체노동력조사 2025년 상반기 (전체 평균 5,025만원/년) <a href="https://laborstat.moel.go.kr/" target="_blank">laborstat.moel.go.kr</a></li>
+        <li>직업별 실측 임금·직무 설명(478) — 진로정보망 커리어넷 직업백과 <a href="https://www.career.go.kr/cloud/w/job/list" target="_blank">career.go.kr</a></li>
+        <li>WEF Future of Jobs 2025 (직업 outlook 보정) — <a href="https://reports.weforum.org/docs/WEF_Future_of_Jobs_Report_2025.pdf" target="_blank">WEF 보고서</a></li>
       </ul>
     </div>
     <div>
       <h4>방법론 ／ 한계</h4>
       <ul>
-        <li>직업별 취업자수·연봉은 KSCO 대분류별 공식 통계를 직업명·카테고리 가중치로 분배한 <em>추정값</em>이며, 카테고리 합계는 KOSIS 통계와 정합한다.</li>
+        <li>직업별 취업자수·연봉은 KSCO 대분류별 공식 통계를 직업명·카테고리 가중치로 분배한 <em>추정값</em>이다. 합계는 KOSIS 통계와 ±1% 정합 (2026: 약 2,894만).</li>
         <li>AI 노출도는 디지털 업무 비중·물리/대인 의존도·LLM 자동화 가능성을 종합한 0–10점 휴리스틱이다. 노출도가 높다고 직업이 사라진다는 뜻은 아니다.</li>
-        <li>직업명 → career.go.kr seq 매핑은 552개 중 298개(55.5%)는 직접 매칭, 나머지는 검색 페이지로 안내한다.</li>
+        <li>직업별 5년 전망(outlook %)은 KEIS 직업전망 텍스트 + WEF 2025 보정을 직업명 키워드로 적용한 추정이다.</li>
+        <li>직업명 → career.go.kr seq 매핑은 552개 중 232개(43.2%)는 직접 매칭, 나머지는 직업백과 메인 페이지로 안내한다 (잘못된 매핑보다 fallback이 안전).</li>
       </ul>
     </div>
   </footer>
