@@ -730,6 +730,7 @@ body::after {
   vertical-align: 1px;
 }
 .detail .src-badge.inline { background: var(--ink-mute); }
+.detail .src-badge.felten { background: var(--maple-deep); }
 
 .detail .cta {
   display: block;
@@ -1111,6 +1112,7 @@ body::after {
         <li>임금 — 고용노동부 사업체노동력조사 2025년 상반기 (전체 평균 5,025만원/년) <a href="https://laborstat.moel.go.kr/" target="_blank">laborstat.moel.go.kr</a></li>
         <li>직업별 실측 임금·직무 설명(478) — 진로정보망 커리어넷 직업백과 <a href="https://www.career.go.kr/cloud/w/job/list" target="_blank">career.go.kr</a></li>
         <li>WEF Future of Jobs 2025 (직업 outlook 보정) — <a href="https://reports.weforum.org/docs/WEF_Future_of_Jobs_Report_2025.pdf" target="_blank">WEF 보고서</a></li>
+        <li>AI Occupational Exposure 367 — <a href="https://github.com/AIOE-Data/AIOE" target="_blank">Felten·Raj·Seamans (2021) AIOE</a> O*NET 770개 직업의 AI 노출도</li>
       </ul>
     </div>
     <div>
@@ -1701,7 +1703,7 @@ function showDetail(d) {
       ${stars ? `<div class="gcell" style="grid-column:1/-1"><div class="l">커리어넷 인기도 (조회수 ${d.views.toLocaleString()}회)</div><div class="v" style="font-family:'Playfair Display',serif;font-size:18px;letter-spacing:2px;color:var(--gold)">${stars}</div></div>` : ""}
     </div>
     ${d.outlook_text ? `<div class="official-outlook"><span class="src-badge">KEIS 공식 5년 전망</span>${esc(d.outlook_text)}</div>` : ""}
-    ${d.exposure_rationale ? `<div class="rationale"><span class="src-badge inline">AI 노출도 평가</span>${esc(d.exposure_rationale)}</div>` : ""}
+    ${d.exposure_rationale ? `<div class="rationale"><span class="src-badge ${d.exposure_source === 'Felten 2021' ? 'felten' : 'inline'}" title="${d.exposure_source === 'Felten 2021' ? 'Felten·Raj·Seamans (2021) Strategic Management Journal — O*NET 직업의 AI Occupational Exposure 점수' : '직업명 키워드 휴리스틱 평가'}">${d.exposure_source === 'Felten 2021' ? 'Felten 2021' : 'AI 노출도 평가'}</span>${esc(d.exposure_rationale)}</div>` : ""}
     <a class="cta" href="${d.url}" target="_blank">${d.career_seq ? "커리어넷 직업백과 보기" : "커리어넷에서 직접 검색"} <span class="arr">→</span></a>
   `;
 }

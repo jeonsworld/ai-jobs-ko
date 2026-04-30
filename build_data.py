@@ -58,6 +58,16 @@ try:
 except FileNotFoundError:
     pass
 
+# Felten et al. 2021 AIOE 매핑 (직업명 → {aioe_raw, aioe_score10, soc, en_title})
+# 출처: Felten, Raj, Seamans (2021) Strategic Management Journal
+# 데이터: github.com/AIOE-Data/AIOE → reference/aioe_data.xlsx
+FELTEN_AIOE: dict[str, dict] = {}
+try:
+    with open("data/felten_mapping.json", encoding="utf-8") as _f:
+        FELTEN_AIOE = json.load(_f)
+except FileNotFoundError:
+    pass
+
 
 def career_url(title: str) -> str:
     """매핑된 seq가 있으면 직업 상세 페이지, 없으면 직업백과 메인."""
@@ -183,34 +193,43 @@ def slugify(text: str) -> str:
     return text.strip("-").lower()[:80]
 
 
-def calc_exposure(title: str, big: str) -> tuple[int, str]:
+def _heuristic_exposure(title: str, big: str) -> int:
     base = BIG_BASE_EXPOSURE.get(big, 5.0)
     score = base
-    matched = []
     for pat, delta in EXPOSURE_KEYWORDS:
         if re.search(pat, title):
             score += delta
-            matched.append(pat)
-    score = max(0, min(10, round(score)))
+    return max(0, min(10, round(score)))
 
-    rationale_parts = []
+
+def _exposure_rationale(score: int, source: str, extra: str = "") -> str:
     if score >= 8:
-        rationale_parts.append(
-            "디지털·정보처리 중심 업무로 LLM·자동화에 의한 업무 재편이 빠르게 진행될 가능성이 큽니다."
-        )
+        msg = "디지털·정보처리 중심 업무로 LLM·자동화에 의한 업무 재편이 빠르게 진행될 가능성이 큽니다."
     elif score >= 6:
-        rationale_parts.append(
-            "문서·데이터·커뮤니케이션이 주요 업무로 AI 보조 도구가 생산성을 크게 끌어올릴 영역입니다."
-        )
+        msg = "문서·데이터·커뮤니케이션이 주요 업무로 AI 보조 도구가 생산성을 크게 끌어올릴 영역입니다."
     elif score >= 4:
-        rationale_parts.append("디지털 업무와 대면·현장 업무가 혼재되어 부분적으로 AI 보조가 가능합니다.")
+        msg = "디지털 업무와 대면·현장 업무가 혼재되어 부분적으로 AI 보조가 가능합니다."
     elif score >= 2:
-        rationale_parts.append("주로 신체·대면 업무로 AI는 일부 행정·일정관리 업무 정도에 영향을 미칩니다.")
+        msg = "주로 신체·대면 업무로 AI는 일부 행정·일정관리 업무 정도에 영향을 미칩니다."
     else:
-        rationale_parts.append("물리적 작업·현장 대응이 핵심이라 현재 AI의 직접적 영향은 제한적입니다.")
-    if matched:
-        rationale_parts.append(f"(대분류 기본 {base:.1f}점, 직업명 키워드 가중)")
-    return score, " ".join(rationale_parts)
+        msg = "물리적 작업·현장 대응이 핵심이라 현재 AI의 직접적 영향은 제한적입니다."
+    return f"{msg} {extra}".strip()
+
+
+def calc_exposure(title: str, big: str) -> tuple[int, str, str]:
+    """0~10 점수 + rationale + source('Felten 2021' or '휴리스틱')."""
+    # 1) Felten et al. 2021 AIOE 점수 우선 (학술 근거)
+    f = FELTEN_AIOE.get(title)
+    if f:
+        score = int(f["aioe_score10"])
+        extra = f"(Felten et al. 2021, US '{f['en_title']}' SOC {f['soc']}, AIOE={f['aioe_raw']:+.2f} → {score}/10)"
+        return score, _exposure_rationale(score, "Felten 2021", extra), "Felten 2021"
+
+    # 2) 휴리스틱 fallback
+    score = _heuristic_exposure(title, big)
+    base = BIG_BASE_EXPOSURE.get(big, 5.0)
+    extra = f"(휴리스틱: 대분류 기본 {base:.1f}점, 직업명 키워드 가중)"
+    return score, _exposure_rationale(score, "휴리스틱", extra), "휴리스틱"
 
 
 # ── 향후 전망 점수 (-10 ~ +20%) ────────────────────────────────────────────
@@ -562,7 +581,7 @@ def main():
             pay_estimated = adjust_pay(j["title"], base_pay)
             outlook, outlook_desc = calc_outlook(j["title"], big)
             education = estimate_education(j["title"], big)
-            exposure, rationale = calc_exposure(j["title"], big)
+            exposure, rationale, exposure_source = calc_exposure(j["title"], big)
 
             # career.go.kr 실제 임금이 있으면 우선 사용 (정확도 ★)
             extra = career_extra(j["title"])
@@ -598,6 +617,7 @@ def main():
                     "education": education,
                     "exposure": exposure,
                     "exposure_rationale": rationale,
+                    "exposure_source": exposure_source,
                     "url": career_url(j["title"]),
                     "career_seq": CAREER_SEQ.get(j["title"]),
                 }
