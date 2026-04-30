@@ -370,7 +370,7 @@ body::after {
   background: var(--paper-deep);
 }
 .kpi {
-  padding: 14px 18px 12px;
+  padding: 12px 16px 11px;
   border-right: 1px solid var(--rule);
   position: relative;
 }
@@ -378,16 +378,16 @@ body::after {
 .kpi .lbl {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--ink-soft);
   text-transform: uppercase;
-  letter-spacing: 0.16em;
-  margin-bottom: 8px;
+  letter-spacing: 0.14em;
+  margin-bottom: 6px;
 }
 .kpi .val {
   font-family: var(--serif);
   font-weight: 700;
-  font-size: 28px;
+  font-size: 26px;
   letter-spacing: -0.02em;
   line-height: 1;
 }
@@ -493,7 +493,7 @@ body::after {
 .panel {
   border: 1px solid var(--ink);
   background: var(--paper-deep);
-  padding: 16px 18px 18px;
+  padding: 14px 16px 16px;
 }
 .panel h3 {
   font-family: var(--serif);
@@ -572,7 +572,7 @@ body::after {
   grid-template-columns: 1fr auto auto;
   gap: 10px;
   align-items: center;
-  padding: 7px 4px;
+  padding: 5px 4px;
   cursor: pointer;
   border-bottom: 1px dotted var(--rule-soft);
   font-size: 12.5px;
@@ -585,16 +585,8 @@ body::after {
 .catlist .row .cnt { font-family: var(--mono); font-size: 11px; color: var(--ink-mute); letter-spacing: 0.04em; }
 
 /* 직업 디테일 카드 */
-.detail .ph {
-  font-family: var(--serif);
-  font-style: italic;
-  color: var(--ink-mute);
-  font-size: 13.5px;
-  text-align: center;
-  padding: 24px 4px;
-  line-height: 1.6;
-}
-.detail .ph::before {
+.detail .ph { display: none; }  /* 자동 직업 선택으로 placeholder 불필요 */
+.detail .ph_unused::before {
   content: '○';
   display: block;
   font-size: 22px;
@@ -1092,10 +1084,8 @@ body::after {
       </div>
 
       <div class="panel" id="detailPanel">
-        <h3>직업 상세 <span class="num">호버 또는 클릭</span></h3>
-        <div class="detail" id="detail">
-          <div class="ph">사각형에 마우스를 올리면 통계 카드가 펼쳐집니다.<br>위 슬라이더로 <b>2015~2030년</b>을 오갈 수 있고, ▶로 자동 재생됩니다.</div>
-        </div>
+        <h3>직업 상세 <span class="num">클릭하여 변경</span></h3>
+        <div class="detail" id="detail"></div>
       </div>
     </aside>
   </div>
@@ -2006,6 +1996,9 @@ fetch("data.json").then(r => r.json()).then(d => {
   document.getElementById("tbYear").textContent = currentYearLabel();
   updateTbNow();
   refresh();
+  // 첫 로드 시 대표 직업(상점판매원, 한국 최대 직업) 자동 표시
+  const featured = DATA.find(x => x.title === "상점판매원") || DATA[0];
+  if (featured) showDetail(featured);
 });
 window.addEventListener("resize", () => requestAnimationFrame(refresh));
 
