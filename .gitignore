@@ -1,0 +1,15 @@
+# 원본/임시 데이터 (재현 가능, 큰 용량)
+reference/
+data/career_raw.json
+
+# 캐시·로그
+.ruff_cache/
+.playwright-mcp/
+.metaharness/
+__pycache__/
+*.pyc
+.DS_Store
+
+# 스크린샷 (수십 MB)
+*.png
+!docs/*.png

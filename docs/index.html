@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한국 노동시장 도해 — 537개 직업의 AI 시대 지도</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,500&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  /* 한지 베이지 ~ 잉크 톤 */
+  --paper:        #f4ecdd;
+  --paper-deep:   #ece2cd;
+  --paper-shade:  #e0d3b8;
+  --ink:          #1d1813;
+  --ink-soft:     #4a4138;
+  --ink-mute:     #8a7d6c;
+  --rule:         #c9b894;
+  --rule-soft:    #d8c8a4;
+  --maple:        #b1361b;     /* 단풍 */
+  --maple-deep:   #6e1f0e;
+  --celadon:      #2f6c6e;     /* 청자 */
+  --gold:         #b9924b;
+  --leaf:         #4a6b3a;
+  --warn:         #c2873d;
+
+  /* 데이터 척도 (단풍↔청자 양극) */
+  --pos-1: #d4dfd0;
+  --pos-2: #8fb286;
+  --pos-3: #4a6b3a;
+  --pos-4: #2f4a25;
+  --neg-1: #f0d4cb;
+  --neg-2: #d97f63;
+  --neg-3: #b1361b;
+  --neg-4: #6e1f0e;
+
+  --serif: 'Playfair Display', 'Cormorant Garamond', 'Times New Roman', serif;
+  --sans:  'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --mono:  ui-monospace, 'SF Mono', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+}
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-feature-settings: "ss01", "tnum";
+  letter-spacing: -0.005em;
+}
+
+/* 종이 질감 */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    radial-gradient(rgba(120,90,40,0.06) 1px, transparent 1px),
+    radial-gradient(rgba(60,40,10,0.04) 1px, transparent 1px);
+  background-size: 3px 3px, 7px 7px;
+  background-position: 0 0, 1px 2px;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+}
+
+/* 좌상단 도장 */
+body::after {
+  content: '';
+  position: fixed;
+  bottom: 24px; right: 28px;
+  width: 64px; height: 64px;
+  background:
+    repeating-linear-gradient(0deg,
+      var(--maple) 0 9px, transparent 9px 18px),
+    repeating-linear-gradient(90deg,
+      var(--maple) 0 9px, transparent 9px 18px);
+  -webkit-mask-image:
+    linear-gradient(135deg, black 30%, transparent 31%),
+    linear-gradient(-135deg, black 30%, transparent 31%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+  max-width: 1640px;
+  margin: 0 auto;
+  padding: 32px 36px 100px;
+}
+
+/* ── 헤더 마스트헤드 (신문 1면 풍) ─────────────────────── */
+.masthead {
+  border-top: 3px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  padding: 18px 0 16px;
+  margin-bottom: 22px;
+  text-align: center;
+}
+.masthead .vol {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+}
+.masthead .title {
+  text-align: center;
+  font-family: var(--serif);
+  font-weight: 900;
+  font-size: clamp(34px, 4.2vw, 56px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+}
+.masthead .title .ko {
+  display: block;
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 0.45em;
+  letter-spacing: -0.03em;
+  margin-top: 4px;
+  color: var(--ink-soft);
+}
+.masthead .meta {
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+}
+.masthead .meta a { color: var(--maple-deep); text-decoration: none; }
+.masthead .meta a:hover { text-decoration: underline; }
+
+.lede {
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.55;
+  font-style: italic;
+  color: var(--ink);
+  text-align: center;
+  max-width: 1080px;
+  margin: 0 auto 26px;
+  letter-spacing: 0.005em;
+}
+.lede .drop {
+  font-family: var(--serif);
+  font-weight: 900;
+  font-style: normal;
+  font-size: 1.4em;
+  margin-right: 4px;
+  color: var(--maple);
+}
+.lede em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--maple-deep);
+  border-bottom: 1px dashed var(--maple);
+  padding-bottom: 1px;
+}
+
+/* ── 컨트롤 바 ─────────────────────────── */
+.controlbar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 18px;
+}
+.layer-label {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+.layer-toggle { display: flex; gap: 0; }
+.layer-toggle button {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-right-width: 0;
+  padding: 8px 16px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  letter-spacing: -0.01em;
+}
+.layer-toggle button:first-child { border-radius: 2px 0 0 2px; }
+.layer-toggle button:last-child {
+  border-radius: 0 2px 2px 0;
+  border-right-width: 1px;
+}
+.layer-toggle button:hover { background: var(--paper-deep); }
+.layer-toggle button.active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.layer-toggle button.active + button { border-left-color: var(--ink); }
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 0.05em;
+}
+.legend .bar {
+  width: 140px;
+  height: 8px;
+  border-radius: 1px;
+  border: 1px solid var(--ink);
+}
+
+/* ── KPI 스트립 ─────────────────────────── */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0;
+  border: 1px solid var(--ink);
+  margin-bottom: 22px;
+  background: var(--paper-deep);
+}
+.kpi {
+  padding: 14px 18px 12px;
+  border-right: 1px solid var(--rule);
+  position: relative;
+}
+.kpi:last-child { border-right: 0; }
+.kpi .lbl {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin-bottom: 8px;
+}
+.kpi .val {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.kpi .val .unit { font-size: 0.55em; font-weight: 500; color: var(--ink-soft); margin-left: 3px; font-family: var(--sans); }
+.kpi .sub { font-family: var(--sans); font-size: 11px; color: var(--ink-mute); margin-top: 6px; letter-spacing: 0.02em; }
+
+/* ── 메인 그리드 ─────────────────────────── */
+.main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 22px;
+}
+
+.viz-wrap {
+  background: var(--paper-deep);
+  border: 1px solid var(--ink);
+  position: relative;
+  overflow: hidden;
+  min-height: 720px;
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  font-family: var(--serif);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+  position: relative;
+  z-index: 2;
+}
+.crumbs button {
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-style: italic;
+  color: var(--maple-deep);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+.crumbs .sep { color: var(--ink-mute); font-style: normal; }
+.crumbs .here { color: var(--ink); font-style: normal; font-weight: 600; }
+.crumbs .right {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 11px;
+  color: var(--ink-mute);
+  letter-spacing: 0.05em;
+}
+
+#canvas { display: block; cursor: default; }
+
+/* 줌 헤더 (직업 단위 진입 시) */
+.zoom-head {
+  position: absolute;
+  top: 56px;
+  left: 0; right: 0;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  padding: 14px 22px 12px;
+  display: none;
+  z-index: 2;
+}
+.zoom-head.show { display: block; }
+.zoom-head .pre {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.zoom-head h2 {
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: -0.02em;
+  margin-top: 4px;
+}
+.zoom-head .meta {
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+}
+.zoom-head .meta b { color: var(--ink); font-weight: 600; }
+
+/* ── 사이드 패널 ─────────────────────────── */
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.panel {
+  border: 1px solid var(--ink);
+  background: var(--paper-deep);
+  padding: 16px 18px 18px;
+}
+.panel h3 {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.panel h3 .num {
+  font-family: var(--mono);
+  font-style: italic;
+  font-size: 11px;
+  color: var(--ink-mute);
+  letter-spacing: 0.05em;
+  font-weight: 400;
+}
+
+.search {
+  position: relative;
+}
+.search input {
+  width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  padding: 11px 14px 11px 36px;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  transition: all 0.15s;
+}
+.search input::placeholder { color: var(--ink-mute); font-style: italic; }
+.search input:focus { background: #fff; border-color: var(--maple); box-shadow: 0 0 0 3px rgba(177,54,27,0.10); }
+.search .icon {
+  position: absolute;
+  left: 12px; top: 50%; transform: translateY(-50%);
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--ink-mute);
+  pointer-events: none;
+  font-size: 16px;
+}
+
+.results {
+  margin-top: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  border-top: 1px solid var(--rule);
+  display: none;
+}
+.results.show { display: block; }
+.result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px;
+  border-bottom: 1px dotted var(--rule);
+  cursor: pointer;
+  transition: background 0.1s;
+  font-size: 13px;
+}
+.result-item:hover { background: var(--paper); }
+.result-item .nm { font-weight: 600; color: var(--ink); }
+.result-item .cat { font-family: var(--serif); font-style: italic; color: var(--ink-mute); font-size: 11px; }
+
+/* 카테고리 리스트 */
+.catlist { display: flex; flex-direction: column; gap: 1px; }
+.catlist .row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 4px;
+  cursor: pointer;
+  border-bottom: 1px dotted var(--rule-soft);
+  font-size: 12.5px;
+  transition: all 0.12s;
+}
+.catlist .row:hover { background: var(--paper); padding-left: 8px; }
+.catlist .row .swatch { width: 12px; height: 12px; border-radius: 1px; flex-shrink: 0; }
+.catlist .row .nm { color: var(--ink); font-weight: 500; line-height: 1.25; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.catlist .row .nm .swatch { display: inline-block; vertical-align: middle; margin-right: 6px; }
+.catlist .row .cnt { font-family: var(--mono); font-size: 11px; color: var(--ink-mute); letter-spacing: 0.04em; }
+
+/* 직업 디테일 카드 */
+.detail .ph {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--ink-mute);
+  font-size: 13.5px;
+  text-align: center;
+  padding: 24px 4px;
+  line-height: 1.6;
+}
+.detail .ph::before {
+  content: '○';
+  display: block;
+  font-size: 22px;
+  margin-bottom: 8px;
+  color: var(--rule);
+}
+.detail .head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.detail .head .nm {
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+.detail .head .cat {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--ink-mute);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.detail .badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 1px;
+  white-space: nowrap;
+  background: var(--ink);
+  color: var(--paper);
+  letter-spacing: 0.04em;
+}
+
+.detail .grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--rule);
+  margin: 14px -2px;
+  border: 1px solid var(--rule);
+}
+.detail .gcell {
+  background: var(--paper);
+  padding: 10px 12px;
+}
+.detail .gcell .l {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 11px;
+  color: var(--ink-mute);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.detail .gcell .v {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.detail .gcell .v.up { color: var(--leaf); }
+.detail .gcell .v.dn { color: var(--maple-deep); }
+
+.detail .work {
+  font-family: var(--serif);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--paper);
+  border-left: 3px solid var(--maple);
+  padding: 10px 12px 10px 14px;
+  margin: 4px 0 0;
+  font-style: normal;
+  letter-spacing: -0.005em;
+}
+.detail .src {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 1px 5px;
+  margin-left: 4px;
+  color: var(--paper);
+  background: var(--celadon);
+  border-radius: 1px;
+  vertical-align: 1px;
+  text-transform: uppercase;
+}
+.detail .src.est { background: var(--ink-mute); }
+
+.detail .rationale {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--rule);
+  padding-top: 10px;
+  margin-top: 4px;
+}
+
+.detail .cta {
+  display: block;
+  margin-top: 14px;
+  padding: 10px 12px;
+  text-align: center;
+  background: var(--ink);
+  color: var(--paper);
+  text-decoration: none;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: all 0.15s;
+}
+.detail .cta:hover { background: var(--maple-deep); }
+.detail .cta .arr { font-family: var(--serif); font-style: italic; font-weight: 400; margin-left: 6px; }
+
+/* ── 통계 패널 (전망/연봉/학력 분포) ─────── */
+.dist .row {
+  display: grid;
+  grid-template-columns: 84px 1fr 56px;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.dist .row .l { color: var(--ink-soft); white-space: nowrap; font-size: 11.5px; }
+.dist .row .track {
+  height: 12px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  position: relative;
+  overflow: hidden;
+}
+.dist .row .fill {
+  height: 100%;
+  background: var(--ink);
+}
+.dist .row .v {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink);
+  text-align: right;
+  letter-spacing: 0.02em;
+}
+
+/* 풋노트 */
+.footnote {
+  margin-top: 32px;
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  padding: 18px 0 22px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 22px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.footnote h4 {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+.footnote a { color: var(--maple-deep); }
+.footnote ul { list-style: none; padding-left: 0; }
+.footnote li { padding-left: 14px; position: relative; margin-bottom: 4px; }
+.footnote li::before { content: '–'; position: absolute; left: 0; color: var(--ink-mute); }
+
+/* 툴팁 — 정보 카드 */
+#tt {
+  position: fixed;
+  pointer-events: none;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 14px 18px 14px;
+  font-size: 12.5px;
+  width: 360px;
+  max-width: 92vw;
+  box-shadow: 5px 6px 0 var(--ink);
+  opacity: 0;
+  transition: opacity 0.1s;
+  z-index: 30;
+}
+#tt.on { opacity: 1; }
+#tt .nm {
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: 19px;
+  margin-bottom: 2px;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+#tt .ct {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 11.5px;
+  color: var(--ink-mute);
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+}
+#tt .work {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  background: var(--paper-deep);
+  border-left: 2px solid var(--maple);
+  padding: 7px 10px;
+  margin-bottom: 10px;
+  font-family: var(--serif);
+  font-style: normal;
+}
+/* 노출도 진행바 */
+#tt .meter {
+  margin-bottom: 10px;
+}
+#tt .meter .head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--ink-mute);
+  margin-bottom: 4px;
+}
+#tt .meter .head b {
+  font-family: var(--sans);
+  font-weight: 700;
+  color: var(--ink);
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+#tt .meter .head em {
+  font-family: var(--mono);
+  font-style: normal;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 11px;
+}
+#tt .meter .bar {
+  height: 6px;
+  background: var(--paper-deep);
+  border: 1px solid var(--rule);
+  position: relative;
+  overflow: hidden;
+}
+#tt .meter .fill { height: 100%; }
+/* 통계 테이블 */
+#tt .stat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px 16px;
+  font-size: 12.5px;
+  border-top: 1px solid var(--rule);
+  padding-top: 9px;
+}
+#tt .stat .l {
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  letter-spacing: -0.005em;
+  font-weight: 500;
+}
+#tt .stat .v {
+  color: var(--ink);
+  text-align: right;
+  font-family: var(--mono);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+#tt .stat .v small {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--ink-mute);
+  margin-left: 4px;
+  letter-spacing: 0.02em;
+}
+#tt .stat .v .src-mark {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px 4px;
+  margin-left: 5px;
+  color: var(--paper);
+  background: var(--celadon);
+  border-radius: 1px;
+  vertical-align: 1px;
+  text-transform: uppercase;
+}
+#tt .stat .v .src-mark.est { background: var(--ink-mute); }
+#tt .rationale {
+  margin-top: 11px;
+  padding-top: 9px;
+  border-top: 1px dashed var(--rule);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+#tt .rationale b {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--ink);
+}
+#tt .hint {
+  margin-top: 9px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 11px;
+  color: var(--ink-mute);
+  text-align: right;
+}
+
+/* 반응형 */
+@media (max-width: 1100px) {
+  .main { grid-template-columns: 1fr; }
+  .side { order: -1; }
+}
+
+/* 가는 스크롤바 */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--paper-deep); }
+::-webkit-scrollbar-thumb { background: var(--ink-mute); border: 2px solid var(--paper-deep); }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-soft); }
+
+/* 입장 애니메이션 */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.masthead, .lede, .controlbar, .kpis, .main, .footnote { animation: fadeUp 0.6s both; }
+.lede { animation-delay: 0.05s; }
+.controlbar { animation-delay: 0.1s; }
+.kpis { animation-delay: 0.15s; }
+.main { animation-delay: 0.2s; }
+.footnote { animation-delay: 0.3s; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- 마스트헤드 -->
+  <header class="masthead">
+    <h1 class="title">
+      Atlas of Korean Labor
+      <span class="ko">한국 노동시장 도해 — 537개 직업의 AI 시대 지도</span>
+    </h1>
+  </header>
+
+  <p class="lede">
+    <span class="drop">한</span>국고용정보원 KNOW 직업분류의 <em>537개 직업</em>을 통계청·고용노동부
+    공식 통계, 그리고 커리어넷 직업백과의 <em>478개 실측 임금</em>·직무 설명과 결합해
+    한국 노동시장 약 <em>2,720만 개</em>의 일자리를 한 화면에 펼쳤다. 사각형의 <em>면적</em>은
+    취업자 수, <em>색</em>은 선택한 지표다. 카테고리를 누르면 그 안의 직업이 펼쳐진다.
+  </p>
+
+  <!-- 컨트롤 바 -->
+  <div class="controlbar">
+    <div class="layer-label">Layer ／ 지표</div>
+    <div class="layer-toggle" id="toggle">
+      <button data-mode="exposure" class="active">디지털 AI 노출도</button>
+      <button data-mode="pay">평균 연봉</button>
+      <button data-mode="outlook">5년 전망</button>
+      <button data-mode="education">학력요건</button>
+    </div>
+    <div class="legend">
+      <span id="legLow">낮음</span>
+      <canvas class="bar" id="legBar" width="140" height="8"></canvas>
+      <span id="legHigh">높음</span>
+    </div>
+  </div>
+
+  <!-- KPI 스트립 -->
+  <div class="kpis">
+    <div class="kpi">
+      <div class="lbl">전체 취업자</div>
+      <div class="val" id="kTot">—<span class="unit">만 명</span></div>
+      <div class="sub">2024년 KOSIS 직업별 취업자</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl"><span id="kHd">평균 노출도</span></div>
+      <div class="val" id="kVal">—</div>
+      <div class="sub" id="kSub">취업자 가중평균</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">고노출(7+) 임금규모</div>
+      <div class="val" id="kExp">—<span class="unit">조원/년</span></div>
+      <div class="sub">AI 노출 7+ 직업의 연 임금합</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">대졸 이상 비중</div>
+      <div class="val" id="kEdu">—<span class="unit">%</span></div>
+      <div class="sub">석사·박사 포함</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">감소 / 증가 일자리</div>
+      <div class="val" id="kGrow">—</div>
+      <div class="sub">5년 전망 기준</div>
+    </div>
+  </div>
+
+  <!-- 메인: 트리맵 + 사이드 패널 -->
+  <div class="main">
+    <section class="viz-wrap">
+      <div class="crumbs">
+        <button id="crumbHome">전체</button>
+        <span class="sep" id="crumbSep" style="display:none">›</span>
+        <span class="here" id="crumbHere" style="display:none"></span>
+        <span class="right" id="crumbRight">35개 카테고리 · 클릭하여 직업 펼쳐보기</span>
+      </div>
+      <div class="zoom-head" id="zoomHead">
+        <div class="pre">Category ／ 카테고리</div>
+        <h2 id="zoomName">—</h2>
+        <div class="meta" id="zoomMeta">—</div>
+      </div>
+      <canvas id="canvas"></canvas>
+    </section>
+
+    <aside class="side">
+      <div class="panel">
+        <h3>검색 <span class="num">537 직업</span></h3>
+        <div class="search">
+          <span class="icon">⌕</span>
+          <input id="q" placeholder="직업명으로 검색…" autocomplete="off">
+          <div class="results" id="qRes"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 id="catTitle">카테고리 <span class="num" id="catCount">— 개</span></h3>
+        <div class="catlist" id="catList"></div>
+      </div>
+
+      <div class="panel" id="detailPanel">
+        <h3>직업 상세 <span class="num">호버 또는 클릭</span></h3>
+        <div class="detail" id="detail">
+          <div class="ph">사각형 위로 마우스를 올리거나 클릭하면 직업의 통계가 여기에 펼쳐집니다.</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- 풋노트 -->
+  <footer class="footnote">
+    <div>
+      <h4>데이터 출처</h4>
+      <ul>
+        <li>직업 마스터 537 — 한국고용정보원 KNOW 직업분류 <a href="https://www.data.go.kr/data/15119096/fileData.do" target="_blank">data.go.kr 15119096</a></li>
+        <li>학력·전망 — KEIS 직업전망/교육훈련/학력 <a href="https://www.data.go.kr/data/15119098/fileData.do" target="_blank">15119098</a></li>
+        <li>대분류별 취업자 — KOSIS 경제활동인구조사 <a href="https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1DA7E08S" target="_blank">DT_1DA7E08S</a></li>
+        <li>임금 — 고용노동부 사업체노동력조사 + 임금근로일자리 행정통계</li>
+        <li>직업 상세 페이지 — 진로정보망 커리어넷 직업백과 <a href="https://www.career.go.kr/cloud/w/job/list" target="_blank">career.go.kr</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>방법론 ／ 한계</h4>
+      <ul>
+        <li>직업별 취업자수·연봉은 KSCO 대분류별 공식 통계를 직업명·카테고리 가중치로 분배한 <em>추정값</em>이며, 카테고리 합계는 KOSIS 통계와 정합한다.</li>
+        <li>AI 노출도는 디지털 업무 비중·물리/대인 의존도·LLM 자동화 가능성을 종합한 0–10점 휴리스틱이다. 노출도가 높다고 직업이 사라진다는 뜻은 아니다.</li>
+        <li>직업명 → career.go.kr seq 매핑은 552개 중 298개(55.5%)는 직접 매칭, 나머지는 검색 페이지로 안내한다.</li>
+      </ul>
+    </div>
+  </footer>
+</div>
+
+<div id="tt">
+  <div class="nm"></div>
+  <div class="ct"></div>
+  <div class="work" hidden></div>
+  <div class="meter">
+    <div class="head"><span class="lbl">—</span><b class="val">—</b><em class="extra"></em></div>
+    <div class="bar"><div class="fill"></div></div>
+  </div>
+  <div class="stat"></div>
+  <div class="rationale" hidden></div>
+  <div class="hint"></div>
+</div>
+
+<script>
+// ── 데이터 ────────────────────────────────────────────────
+let DATA = [];
+let view = "categories";   // "categories" or "category"
+let activeCat = null;
+let mode = "exposure";
+
+// ── 색상 시스템 ──────────────────────────────────────────
+const PALETTE = {
+  // 양극: 단풍(높음/안 좋음) ↔ 청자/녹(낮음/좋음)
+  // ratio 0..1
+  diverge: (t) => {
+    t = Math.max(0, Math.min(1, t));
+    // 0..0.5: 청자 → 베이지, 0.5..1: 베이지 → 단풍
+    const lerp = (a, b, k) => Math.round(a + (b - a) * k);
+    if (t < 0.5) {
+      const k = t / 0.5;
+      return `rgb(${lerp(74, 230, k)}, ${lerp(107, 219, k)}, ${lerp(58, 195, k)})`;
+    } else {
+      const k = (t - 0.5) / 0.5;
+      return `rgb(${lerp(230, 177, k)}, ${lerp(219, 54, k)}, ${lerp(195, 27, k)})`;
+    }
+  },
+  // 단순 시퀀셜 (낮음 베이지 → 높음 단풍)
+  seq: (t) => {
+    t = Math.max(0, Math.min(1, t));
+    const lerp = (a, b, k) => Math.round(a + (b - a) * k);
+    return `rgb(${lerp(244, 177, t)}, ${lerp(236, 54, t)}, ${lerp(221, 27, t)})`;
+  }
+};
+
+const EDU_LEVELS = ["고졸 이하", "전문대졸", "대졸", "석사", "박사"];
+
+function tileColor(d) {
+  if (mode === "exposure") {
+    const v = d.exposure;
+    if (v == null) return "#cdc2a8";
+    return PALETTE.seq(v / 10);                 // 노출 높을수록 단풍색
+  }
+  if (mode === "pay") {
+    const v = d.pay;
+    if (v == null) return "#cdc2a8";
+    const t = (Math.log(Math.max(1500, Math.min(13000, v))) - Math.log(1500)) /
+              (Math.log(13000) - Math.log(1500));
+    return PALETTE.diverge(t);                  // 높은 연봉 = 단풍, 낮음 = 청자
+  }
+  if (mode === "outlook") {
+    const v = d.outlook;
+    if (v == null) return "#cdc2a8";
+    // -10..+20 → 0..1, 좋음(증가) = 청자, 나쁨(감소) = 단풍
+    const t = 1 - Math.max(0, Math.min(1, (v + 12) / 32));
+    return PALETTE.diverge(t);
+  }
+  if (mode === "education") {
+    const i = EDU_LEVELS.indexOf(d.education);
+    if (i < 0) return "#cdc2a8";
+    return PALETTE.diverge(i / (EDU_LEVELS.length - 1));
+  }
+  return "#cdc2a8";
+}
+
+function categoryColor(c) {
+  // 카테고리 평균 metric으로 색 결정
+  let metric;
+  if (mode === "exposure") metric = c.avg_exposure;
+  else if (mode === "pay") metric = c.avg_pay;
+  else if (mode === "outlook") metric = c.avg_outlook;
+  else metric = c.avg_edu;
+  return tileColor({
+    exposure: mode === "exposure" ? metric : null,
+    pay: mode === "pay" ? metric : null,
+    outlook: mode === "outlook" ? metric : null,
+    education: mode === "education" ? EDU_LEVELS[Math.round(metric)] || EDU_LEVELS[0] : null,
+  });
+}
+
+// ── Squarified treemap ─────────────────────────────
+function squarify(items, x, y, w, h) {
+  if (items.length === 0) return [];
+  if (items.length === 1) return [{ ...items[0], rx: x, ry: y, rw: w, rh: h }];
+  const total = items.reduce((s, d) => s + d.value, 0);
+  if (total === 0) return [];
+  const results = [];
+  let remaining = [...items], cx = x, cy = y, cw = w, ch = h;
+  while (remaining.length > 0) {
+    const remTotal = remaining.reduce((s, d) => s + d.value, 0);
+    const vertical = cw >= ch;
+    const side = vertical ? ch : cw;
+    let row = [remaining[0]], rowSum = remaining[0].value;
+    for (let i = 1; i < remaining.length; i++) {
+      const candidate = [...row, remaining[i]];
+      const candidateSum = rowSum + remaining[i].value;
+      if (worstAspect(candidate, candidateSum, side, remTotal, vertical ? cw : ch) <
+          worstAspect(row, rowSum, side, remTotal, vertical ? cw : ch)) {
+        row = candidate; rowSum = candidateSum;
+      } else break;
+    }
+    const rowFraction = rowSum / remTotal;
+    const rowThickness = vertical ? cw * rowFraction : ch * rowFraction;
+    let offset = 0;
+    for (const item of row) {
+      const itemFraction = item.value / rowSum;
+      const itemLength = side * itemFraction;
+      if (vertical) results.push({ ...item, rx: cx, ry: cy + offset, rw: rowThickness, rh: itemLength });
+      else results.push({ ...item, rx: cx + offset, ry: cy, rw: itemLength, rh: rowThickness });
+      offset += itemLength;
+    }
+    if (vertical) { cx += rowThickness; cw -= rowThickness; }
+    else { cy += rowThickness; ch -= rowThickness; }
+    remaining = remaining.slice(row.length);
+  }
+  return results;
+}
+function worstAspect(row, rowSum, side, totalArea, availableExtent) {
+  const rowExtent = availableExtent * (rowSum / totalArea);
+  if (rowExtent === 0) return Infinity;
+  let worst = 0;
+  for (const item of row) {
+    const itemLen = side * (item.value / rowSum);
+    if (itemLen === 0) continue;
+    const aspect = Math.max(rowExtent / itemLen, itemLen / rowExtent);
+    if (aspect > worst) worst = aspect;
+  }
+  return worst;
+}
+
+// ── 렌더링 ──────────────────────────────────────────
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+let dpr = window.devicePixelRatio || 1;
+let rects = [];
+let hovered = null;
+
+function buildCategories() {
+  const m = {};
+  for (const d of DATA) {
+    const c = m[d.category] || (m[d.category] = { cat: d.category, big: d.big_category, items: [], jobs: 0 });
+    c.items.push(d);
+    c.jobs += d.jobs || 0;
+  }
+  for (const c of Object.values(m)) {
+    let totJ = 0, sumExp = 0, sumPay = 0, sumOl = 0, sumEdu = 0;
+    for (const d of c.items) {
+      const j = d.jobs || 0;
+      totJ += j;
+      if (d.exposure != null) sumExp += d.exposure * j;
+      if (d.pay != null) sumPay += d.pay * j;
+      if (d.outlook != null) sumOl += d.outlook * j;
+      const i = EDU_LEVELS.indexOf(d.education);
+      if (i >= 0) sumEdu += i * j;
+    }
+    c.avg_exposure = totJ > 0 ? sumExp / totJ : 0;
+    c.avg_pay = totJ > 0 ? sumPay / totJ : 0;
+    c.avg_outlook = totJ > 0 ? sumOl / totJ : 0;
+    c.avg_edu = totJ > 0 ? sumEdu / totJ : 0;
+  }
+  return Object.values(m).sort((a, b) => b.jobs - a.jobs);
+}
+let CATS = [];
+
+function layout() {
+  const wrap = canvas.parentElement;
+  const w = wrap.clientWidth;
+  const headerH = view === "category" ? 56 + 76 : 56;  // crumbs + (zoomHead)
+  const h = Math.max(720, Math.round(w * 0.62));
+  canvas.width = w * dpr; canvas.height = (h - headerH) * dpr;
+  canvas.style.width = w + "px"; canvas.style.height = (h - headerH) + "px";
+  canvas.style.marginTop = headerH + "px";
+  wrap.style.height = h + "px";
+
+  const PAD = 6;
+  const tw = w - PAD * 2, th = h - headerH - PAD * 2;
+  rects = [];
+  if (view === "categories") {
+    const items = CATS.map(c => ({ ...c, value: c.jobs }));
+    const r = squarify(items, PAD, PAD, tw, th);
+    rects = r.map(it => ({ ...it, kind: "cat" }));
+  } else {
+    const cat = CATS.find(c => c.cat === activeCat);
+    if (!cat) return;
+    const items = cat.items
+      .slice()
+      .sort((a, b) => (b.jobs || 0) - (a.jobs || 0))
+      .map(d => ({ ...d, value: Math.max(d.jobs || 1, 1) }));
+    const r = squarify(items, PAD, PAD, tw, th);
+    rects = r.map(it => ({ ...it, kind: "job" }));
+  }
+}
+
+function fitFont(text, maxW, maxH, minSize=11, maxSize=22, weight=600) {
+  let s = Math.min(maxSize, Math.max(minSize, Math.min(maxW / Math.max(2, text.length * 0.55), maxH * 0.45)));
+  return s;
+}
+
+function draw() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // 종이 톤 배경
+  ctx.fillStyle = "#ece2cd";
+  ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+  for (const r of rects) {
+    const isHover = r === hovered;
+    const x = r.rx, y = r.ry, ww = r.rw - 1, hh = r.rh - 1;
+    if (ww <= 0 || hh <= 0) continue;
+
+    // 색
+    let fill;
+    if (r.kind === "cat") fill = categoryColor(r);
+    else fill = tileColor(r);
+    ctx.fillStyle = fill;
+    ctx.fillRect(x, y, ww, hh);
+
+    // 외곽선 (잉크)
+    ctx.strokeStyle = isHover ? "#1d1813" : "rgba(29,24,19,0.35)";
+    ctx.lineWidth = isHover ? 2 : 0.6;
+    ctx.strokeRect(x + 0.5, y + 0.5, ww - 1, hh - 1);
+
+    // 텍스트
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x + 6, y + 4, ww - 12, hh - 8); ctx.clip();
+    if (r.kind === "cat") {
+      const title = r.cat;
+      const fs = Math.min(20, Math.max(11, Math.min(ww / Math.max(2, title.length * 0.7), hh * 0.18)));
+      ctx.font = `700 ${fs}px Pretendard, -apple-system, system-ui, sans-serif`;
+      ctx.fillStyle = "#1d1813";
+      ctx.textBaseline = "top";
+      ctx.fillText(title, x + 8, y + 8);
+      // 합계
+      if (hh > 50 && ww > 80) {
+        ctx.font = `600 ${Math.max(11, fs * 0.7)}px ui-monospace, "SF Mono", Menlo, monospace`;
+        ctx.fillStyle = "rgba(29,24,19,0.65)";
+        ctx.fillText(formatJobs(r.jobs), x + 8, y + 8 + fs + 4);
+      }
+      // 직업 수 우하단
+      if (hh > 30 && ww > 120) {
+        ctx.font = `italic 500 11px "Playfair Display", serif`;
+        ctx.fillStyle = "rgba(29,24,19,0.55)";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(`${r.items.length}개 직업 →`, x + ww - 8, y + hh - 6);
+        ctx.textAlign = "start";
+      }
+    } else {
+      // 직업 타일
+      const title = r.title;
+      const fs = ww > 200 ? 14 : ww > 130 ? 13 : 12;
+      ctx.font = `600 ${fs}px Pretendard, -apple-system, system-ui, sans-serif`;
+      ctx.fillStyle = "#1d1813";
+      ctx.textBaseline = "top";
+      ctx.fillText(title, x + 8, y + 8);
+      if (hh > 38) {
+        ctx.font = `500 11px ui-monospace, "SF Mono", Menlo, monospace`;
+        ctx.fillStyle = "rgba(29,24,19,0.6)";
+        ctx.fillText(subInfo(r), x + 8, y + 8 + fs + 4);
+      }
+    }
+    ctx.restore();
+  }
+}
+
+function subInfo(d) {
+  const j = d.jobs ? formatJobs(d.jobs) : "";
+  if (mode === "exposure" && d.exposure != null) return `${d.exposure}/10  ·  ${j}`;
+  if (mode === "pay" && d.pay != null) return `${formatPay(d.pay)}  ·  ${j}`;
+  if (mode === "outlook" && d.outlook != null) return `${d.outlook > 0 ? "+" : ""}${d.outlook}%  ·  ${j}`;
+  if (mode === "education" && d.education) return `${d.education}  ·  ${j}`;
+  return j;
+}
+function formatJobs(n) {
+  if (n == null) return "—";
+  if (n >= 1e6) return (n / 1e4).toFixed(0) + "만 명";
+  if (n >= 1e4) return (n / 1e4).toFixed(1) + "만 명";
+  if (n >= 1e3) return Math.round(n / 1e3) + "천 명";
+  return n.toLocaleString() + "명";
+}
+function formatPay(n) {
+  if (n == null) return "—";
+  if (n >= 10000) return (n / 10000).toFixed(2) + "억";
+  return n.toLocaleString() + "만";
+}
+
+// ── 호버 / 클릭 ─────────────────────────────────────
+function hitTest(mx, my) {
+  const rect = canvas.getBoundingClientRect();
+  const cx = mx - rect.left, cy = my - rect.top;
+  for (let i = rects.length - 1; i >= 0; i--) {
+    const r = rects[i];
+    if (cx >= r.rx && cx < r.rx + r.rw && cy >= r.ry && cy < r.ry + r.rh) return r;
+  }
+  return null;
+}
+
+canvas.addEventListener("mousemove", (e) => {
+  const hit = hitTest(e.clientX, e.clientY);
+  if (hit !== hovered) { hovered = hit; draw(); }
+  if (hovered) {
+    showTip(hovered, e.clientX, e.clientY);
+    canvas.style.cursor = "pointer";
+    if (hovered.kind === "job") showDetail(hovered);
+  } else {
+    hideTip();
+    canvas.style.cursor = "default";
+  }
+});
+canvas.addEventListener("mouseleave", () => { hovered = null; hideTip(); draw(); });
+canvas.addEventListener("click", (e) => {
+  const hit = hitTest(e.clientX, e.clientY);
+  if (!hit) return;
+  if (hit.kind === "cat") {
+    enterCategory(hit.cat);
+  } else {
+    if (hit.url) window.open(hit.url, "_blank");
+  }
+});
+
+// AI 노출도 단계 라벨
+function exposureLabel(v) {
+  if (v == null) return "—";
+  if (v <= 1) return "매우 낮음";
+  if (v <= 3) return "낮음";
+  if (v <= 5) return "중간";
+  if (v <= 7) return "높음";
+  return "매우 높음";
+}
+// 취업자 양 형식으로 (천 명 + 만 명)
+function formatJobsDual(n) {
+  if (!n) return "—";
+  const cheonMyeong = (n / 1000).toFixed(1) + "천 명";
+  const manMyeong = (n / 1e4).toFixed(0) + "만 명";
+  return `${cheonMyeong} <small>(${manMyeong})</small>`;
+}
+function formatMonthly(annualMan) {
+  if (!annualMan) return "—";
+  const monthly = Math.round(annualMan / 12);
+  return `${monthly.toLocaleString()}만원`;
+}
+
+function showTip(d, mx, my) {
+  const tt = document.getElementById("tt");
+  const $ = (s) => tt.querySelector(s);
+
+  if (d.kind === "cat") {
+    $(".nm").textContent = d.cat;
+    $(".ct").textContent = d.big || "";
+    $(".work").hidden = true;
+    // 노출도 진행바: 카테고리 평균 노출도 사용
+    const v = d.avg_exposure || 0;
+    $(".meter .lbl").textContent = "디지털 AI 노출도";
+    $(".meter .val").textContent = `${v.toFixed(1)}/10 · ${exposureLabel(v)}`;
+    $(".meter .extra").textContent = `${d.items.length}개 직업`;
+    $(".meter .fill").style.width = `${v / 10 * 100}%`;
+    $(".meter .fill").style.background = exposureBarColor(v);
+    $(".stat").innerHTML = `
+      <span class="l">취업자</span><span class="v">${formatJobsDual(d.jobs)}</span>
+      <span class="l">평균 연봉</span><span class="v">${formatPay(Math.round(d.avg_pay))} <small class="src-mark est">가중평균</small></span>
+      <span class="l">월임금 환산</span><span class="v">${formatMonthly(Math.round(d.avg_pay))}</span>
+      <span class="l">5년 전망</span><span class="v">${d.avg_outlook > 0 ? "+" : ""}${d.avg_outlook.toFixed(1)}% <small>${outlookDesc(d.avg_outlook)}</small></span>
+      <span class="l">대표 학력</span><span class="v">${EDU_LEVELS[Math.round(d.avg_edu)] || "—"}</span>
+      <span class="l">전체 비중</span><span class="v">${(d.jobs / DATA.reduce((s, x) => s + (x.jobs || 0), 0) * 100).toFixed(1)}%</span>`;
+    $(".rationale").hidden = true;
+    $(".hint").textContent = "클릭하여 직업 펼쳐보기 →";
+  } else {
+    $(".nm").textContent = d.title;
+    $(".ct").textContent = `${d.big_category || ""} · ${d.category || ""}`;
+    if (d.work) {
+      $(".work").hidden = false;
+      $(".work").textContent = d.work;
+    } else {
+      $(".work").hidden = true;
+    }
+    // 노출도 진행바
+    const v = d.exposure ?? 0;
+    $(".meter .lbl").textContent = "디지털 AI 노출도";
+    $(".meter .val").textContent = `${v}/10 · ${exposureLabel(v)}`;
+    $(".meter .extra").textContent = d.views ? `조회 ${(d.views / 1e4).toFixed(0)}만회` : "";
+    $(".meter .fill").style.width = `${v / 10 * 100}%`;
+    $(".meter .fill").style.background = exposureBarColor(v);
+    // 임금 출처 표시
+    const realPay = d.pay_source === "career.go.kr";
+    const paySrc = realPay
+      ? `<span class="src-mark">실측</span>`
+      : `<span class="src-mark est">추정</span>`;
+    $(".stat").innerHTML = `
+      <span class="l">취업자</span><span class="v">${formatJobsDual(d.jobs)} <small>추정</small></span>
+      <span class="l">평균 연봉</span><span class="v">${formatPay(d.pay)} ${paySrc}</span>
+      <span class="l">월임금 환산</span><span class="v">${formatMonthly(d.pay)}</span>
+      <span class="l">5년 전망</span><span class="v">${d.outlook > 0 ? "+" : ""}${d.outlook}% <small>${d.outlook_desc || ""}</small></span>
+      <span class="l">주요 학력</span><span class="v">${d.education || "—"}</span>`;
+    if (d.exposure_rationale) {
+      $(".rationale").hidden = false;
+      $(".rationale").innerHTML = d.exposure_rationale;
+    } else {
+      $(".rationale").hidden = true;
+    }
+    $(".hint").textContent = "클릭하여 커리어넷 직업백과 →";
+  }
+
+  // 위치 계산
+  tt.classList.add("on");
+  const tw = tt.offsetWidth, th = tt.offsetHeight;
+  let tx = mx + 18, ty = my - 12;
+  if (tx + tw > window.innerWidth - 8) tx = mx - tw - 18;
+  if (tx < 8) tx = 8;
+  if (ty + th > window.innerHeight - 8) ty = window.innerHeight - th - 8;
+  if (ty < 8) ty = 8;
+  tt.style.left = tx + "px";
+  tt.style.top = ty + "px";
+}
+function hideTip() { document.getElementById("tt").classList.remove("on"); }
+
+function exposureBarColor(v) {
+  // 0=청자(낮음/안전), 10=단풍(높음)
+  return PALETTE.seq(v / 10);
+}
+function outlookDesc(v) {
+  if (v == null) return "";
+  if (v <= -10) return "감소";
+  if (v <= -2) return "다소 감소";
+  if (v <= 3) return "유지";
+  if (v <= 8) return "다소 증가";
+  if (v <= 15) return "증가";
+  return "크게 증가";
+}
+
+// ── 디테일 패널 ─────────────────────────────────────
+function showDetail(d) {
+  const el = document.getElementById("detail");
+  const out = (d.outlook != null) ? (d.outlook > 0 ? "+" : "") + d.outlook + "%" : "—";
+  const outClass = d.outlook > 0 ? "up" : (d.outlook < 0 ? "dn" : "");
+  const isReal = d.pay_source === "career.go.kr";
+  const paySrcMark = isReal
+    ? `<span class="src" title="career.go.kr 직업백과 실측">실측</span>`
+    : `<span class="src est" title="KSCO 대분류 평균에서 추정">추정</span>`;
+  const jobsMark = `<span class="src est" title="대분류 통계를 직업명·카테고리 가중치로 분배">추정</span>`;
+
+  // 인기도 별 (조회수 로그 기반)
+  let stars = "";
+  if (d.views) {
+    const lv = Math.min(5, Math.max(1, Math.round(Math.log10(d.views) - 2)));  // 1만↑=2, 10만↑=3, 100만↑=4 …
+    stars = "★".repeat(lv) + "<span style='color:var(--rule)'>" + "★".repeat(5 - lv) + "</span>";
+  }
+
+  el.innerHTML = `
+    <div class="head">
+      <div>
+        <div class="nm">${esc(d.title)}</div>
+        <div class="cat">${esc(d.big_category || "")} · ${esc(d.category || "")}</div>
+      </div>
+      <div class="badge">${d.exposure}/10 노출</div>
+    </div>
+    ${d.work ? `<div class="work">${esc(d.work)}</div>` : ""}
+    <div class="grid">
+      <div class="gcell"><div class="l">평균 연봉 ${paySrcMark}</div><div class="v">${formatPay(d.pay)}</div></div>
+      <div class="gcell"><div class="l">취업자 ${jobsMark}</div><div class="v">${formatJobs(d.jobs)}</div></div>
+      <div class="gcell"><div class="l">5년 전망</div><div class="v ${outClass}">${out} <span style="font-family:'Playfair Display',serif;font-style:italic;font-weight:400;font-size:11px;color:var(--ink-mute)">${d.outlook_desc || ""}</span></div></div>
+      <div class="gcell"><div class="l">학력요건</div><div class="v">${esc(d.education || "—")}</div></div>
+      ${stars ? `<div class="gcell" style="grid-column:1/-1"><div class="l">커리어넷 인기도 (조회수 ${d.views.toLocaleString()}회)</div><div class="v" style="font-family:'Playfair Display',serif;font-size:18px;letter-spacing:2px;color:var(--gold)">${stars}</div></div>` : ""}
+    </div>
+    ${d.exposure_rationale ? `<div class="rationale">${esc(d.exposure_rationale)}</div>` : ""}
+    <a class="cta" href="${d.url}" target="_blank">커리어넷 직업백과 보기 <span class="arr">→</span></a>
+  `;
+}
+
+// ── 진입/퇴장 ───────────────────────────────────────
+function enterCategory(cat) {
+  view = "category";
+  activeCat = cat;
+  const c = CATS.find(x => x.cat === cat);
+  document.getElementById("zoomHead").classList.add("show");
+  document.getElementById("zoomName").textContent = cat;
+  document.getElementById("zoomMeta").innerHTML =
+    `<b>${formatJobs(c.jobs)}</b> · <b>${c.items.length}개 직업</b> · 평균 연봉 <b>${formatPay(Math.round(c.avg_pay))}</b> · 평균 AI 노출 <b>${c.avg_exposure.toFixed(1)}/10</b> · 5년 전망 <b>${c.avg_outlook > 0 ? "+" : ""}${c.avg_outlook.toFixed(1)}%</b>`;
+  document.getElementById("crumbSep").style.display = "";
+  document.getElementById("crumbHere").style.display = "";
+  document.getElementById("crumbHere").textContent = cat;
+  document.getElementById("crumbRight").textContent = `${c.items.length}개 직업 · 클릭하여 커리어넷 이동`;
+  refresh();
+}
+function exitCategory() {
+  view = "categories";
+  activeCat = null;
+  document.getElementById("zoomHead").classList.remove("show");
+  document.getElementById("crumbSep").style.display = "none";
+  document.getElementById("crumbHere").style.display = "none";
+  document.getElementById("crumbRight").textContent = "35개 카테고리 · 클릭하여 직업 펼쳐보기";
+  refresh();
+}
+document.getElementById("crumbHome").addEventListener("click", exitCategory);
+
+// ── 카테고리 사이드 리스트 ─────────────────────────
+function renderCatList() {
+  const el = document.getElementById("catList");
+  document.getElementById("catCount").textContent = CATS.length + "개";
+  el.innerHTML = CATS.map(c => {
+    const sw = categoryColor(c);
+    return `<div class="row" data-cat="${escAttr(c.cat)}">
+      <span class="nm" title="${escAttr(c.cat)}"><span class="swatch" style="background:${sw}"></span>${esc(c.cat)}</span>
+      <span class="cnt">${c.items.length}직</span>
+      <span class="cnt">${formatJobs(c.jobs)}</span>
+    </div>`;
+  }).join("");
+  el.querySelectorAll(".row").forEach(row => {
+    row.addEventListener("click", () => enterCategory(row.dataset.cat));
+  });
+}
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+function escAttr(s) { return esc(s); }
+
+// ── 검색 ────────────────────────────────────────────
+const qInput = document.getElementById("q");
+const qRes = document.getElementById("qRes");
+qInput.addEventListener("input", () => {
+  const q = qInput.value.trim();
+  if (!q) { qRes.classList.remove("show"); qRes.innerHTML = ""; return; }
+  const ql = q.toLowerCase();
+  const hits = DATA.filter(d => d.title.toLowerCase().includes(ql) || (d.category || "").includes(q)).slice(0, 30);
+  if (hits.length === 0) {
+    qRes.innerHTML = `<div class="result-item"><span class="nm" style="color:var(--ink-mute)">결과 없음</span></div>`;
+  } else {
+    qRes.innerHTML = hits.map(h => `<div class="result-item" data-cat="${escAttr(h.category)}" data-title="${escAttr(h.title)}">
+      <span class="nm">${esc(h.title)}</span>
+      <span class="cat">${esc(h.category)}</span>
+    </div>`).join("");
+    qRes.querySelectorAll(".result-item").forEach(el => {
+      el.addEventListener("click", () => {
+        const cat = el.dataset.cat;
+        const title = el.dataset.title;
+        enterCategory(cat);
+        const found = DATA.find(d => d.title === title);
+        if (found) showDetail(found);
+        qInput.value = ""; qRes.classList.remove("show");
+      });
+    });
+  }
+  qRes.classList.add("show");
+});
+
+// ── KPI 업데이트 ────────────────────────────────────
+function updateKPIs() {
+  const total = DATA.reduce((s, d) => s + (d.jobs || 0), 0);
+  document.getElementById("kTot").innerHTML = `${(total / 1e4).toFixed(0)}<span class="unit">만 명</span>`;
+
+  // 헤드라인 = 현재 모드
+  let head, val, sub;
+  if (mode === "exposure") {
+    let s = 0, w = 0;
+    for (const d of DATA) if (d.exposure != null && d.jobs) { s += d.exposure * d.jobs; w += d.jobs; }
+    head = "평균 노출도 ／ AI";
+    val = (s / w).toFixed(1);
+    sub = "0~10점 척도, 가중평균";
+  } else if (mode === "pay") {
+    let s = 0, w = 0;
+    for (const d of DATA) if (d.pay != null && d.jobs) { s += d.pay * d.jobs; w += d.jobs; }
+    head = "평균 연봉";
+    val = `${Math.round(s / w / 100) / 10}<span class="unit">천만원</span>`;
+    sub = "취업자 가중평균";
+  } else if (mode === "outlook") {
+    let s = 0, w = 0;
+    for (const d of DATA) if (d.outlook != null && d.jobs) { s += d.outlook * d.jobs; w += d.jobs; }
+    head = "평균 5년 전망";
+    val = `${(s / w > 0 ? "+" : "")}${(s / w).toFixed(1)}<span class="unit">%</span>`;
+    sub = "취업자 가중평균";
+  } else {
+    let bs = 0;
+    for (const d of DATA) if (d.jobs && ["대졸","석사","박사"].includes(d.education)) bs += d.jobs;
+    head = "대졸+ 일자리";
+    val = `${(bs / 1e4).toFixed(0)}<span class="unit">만 명</span>`;
+    sub = "전체 대비 " + (bs / total * 100).toFixed(0) + "%";
+  }
+  document.getElementById("kHd").textContent = head;
+  document.getElementById("kVal").innerHTML = val;
+  document.getElementById("kSub").textContent = sub;
+
+  let exp7 = 0;
+  for (const d of DATA) if (d.exposure >= 7 && d.jobs && d.pay) exp7 += d.jobs * d.pay;
+  document.getElementById("kExp").innerHTML = `${(exp7 / 1e8).toFixed(0)}<span class="unit">조원/년</span>`;
+
+  let bach = 0;
+  for (const d of DATA) if (d.jobs && ["대졸","석사","박사"].includes(d.education)) bach += d.jobs;
+  document.getElementById("kEdu").innerHTML = `${(bach / total * 100).toFixed(0)}<span class="unit">%</span>`;
+
+  let dec = 0, inc = 0;
+  for (const d of DATA) {
+    if (d.outlook == null || !d.jobs) continue;
+    if (d.outlook < 0) dec += d.jobs;
+    else if (d.outlook > 0) inc += d.jobs;
+  }
+  document.getElementById("kGrow").innerHTML =
+    `<span style="color:var(--maple-deep)">${Math.round(dec / 1e4)}만</span><span class="unit"> ↘ </span><span style="color:var(--leaf)">${Math.round(inc / 1e4)}만</span>`;
+}
+
+// ── 범례 그라데이션 ─────────────────────────────────
+function drawLegend() {
+  const c = document.getElementById("legBar");
+  const g = c.getContext("2d");
+  for (let x = 0; x < 140; x++) {
+    const t = x / 139;
+    if (mode === "exposure") g.fillStyle = PALETTE.seq(t);
+    else if (mode === "outlook") g.fillStyle = PALETTE.diverge(1 - t);
+    else g.fillStyle = PALETTE.diverge(t);
+    g.fillRect(x, 0, 1, 8);
+  }
+  const cfg = {
+    exposure:  ["낮음", "높음"],
+    outlook:   ["감소", "증가"],
+    pay:       ["1,500만", "1.3억"],
+    education: ["고졸", "박사"],
+  }[mode];
+  document.getElementById("legLow").textContent = cfg[0];
+  document.getElementById("legHigh").textContent = cfg[1];
+}
+
+// ── 레이어 토글 ────────────────────────────────────
+document.getElementById("toggle").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn || !btn.dataset.mode) return;
+  mode = btn.dataset.mode;
+  document.querySelectorAll("#toggle button").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  refresh();
+});
+
+function refresh() {
+  layout(); draw(); updateKPIs(); drawLegend();
+  if (view === "categories") renderCatList();
+}
+
+// ── 로드 ────────────────────────────────────────────
+fetch("data.json").then(r => r.json()).then(d => {
+  DATA = d;
+  CATS = buildCategories();
+  refresh();
+});
+window.addEventListener("resize", () => requestAnimationFrame(refresh));
+
+// ESC로 카테고리 빠져나오기
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && view === "category") exitCategory();
+});
+</script>
+</body>
+</html>
