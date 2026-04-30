@@ -272,18 +272,35 @@ body::after {
 .timebar .tb-play:hover { background: var(--ink); color: var(--paper); }
 .timebar .tb-play.playing { background: var(--maple); color: var(--paper); border-color: var(--maple); }
 .timebar .tb-slider { position: relative; padding: 4px 6px 0; min-width: 0; }
+/* 트랙은 얇게 보이되 hit-area를 22px로 확장 (마우스로 잡기 쉽게) */
 .timebar input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 6px;
-  background: linear-gradient(to right, var(--celadon) 0%, var(--paper-shade) 60%, var(--maple) 100%);
+  height: 22px;
+  background: transparent;
   outline: none;
-  border: 1px solid var(--ink);
+  border: 0;
   margin: 0 0 4px;
   cursor: pointer;
   border-radius: 0;
+  padding: 0;
 }
+/* WebKit 트랙 */
+.timebar input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  background: linear-gradient(to right, var(--celadon) 0%, var(--paper-shade) 60%, var(--maple) 100%);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+}
+/* Firefox 트랙 */
+.timebar input[type="range"]::-moz-range-track {
+  height: 6px;
+  background: linear-gradient(to right, var(--celadon) 0%, var(--paper-shade) 60%, var(--maple) 100%);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+}
+/* WebKit thumb */
 .timebar input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -293,15 +310,21 @@ body::after {
   cursor: grab;
   border-radius: 1px;
   box-shadow: 1px 2px 0 rgba(0,0,0,0.4);
+  margin-top: -9px;     /* 트랙 가운데 정렬 (22-6)/2 ≈ -8 */
 }
-.timebar input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; background: var(--maple); }
+.timebar input[type="range"]:hover::-webkit-slider-thumb { background: var(--maple); }
+.timebar input[type="range"]:active::-webkit-slider-thumb { background: var(--maple); cursor: grabbing; }
+/* Firefox thumb */
 .timebar input[type="range"]::-moz-range-thumb {
   width: 18px; height: 22px;
   background: var(--ink);
   border: 0;
   cursor: grab;
   border-radius: 1px;
+  box-shadow: 1px 2px 0 rgba(0,0,0,0.4);
 }
+.timebar input[type="range"]:hover::-moz-range-thumb { background: var(--maple); }
+.timebar input[type="range"]:active::-moz-range-thumb { background: var(--maple); cursor: grabbing; }
 .timebar .tb-axis {
   display: flex;
   justify-content: space-between;
