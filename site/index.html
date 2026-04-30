@@ -1087,11 +1087,6 @@ body::after {
         </div>
       </div>
 
-      <div class="panel" id="detailPanel">
-        <h3>직업 상세 <span class="num">클릭하여 변경</span></h3>
-        <div class="detail" id="detail"></div>
-      </div>
-
       <div class="panel panel-cat">
         <h3 id="catTitle">카테고리 <span class="num" id="catCount">— 개</span></h3>
         <div class="catlist" id="catList"></div>
@@ -1543,7 +1538,6 @@ canvas.addEventListener("mousemove", (e) => {
   if (hovered) {
     showTip(hovered, e.clientX, e.clientY);
     canvas.style.cursor = "pointer";
-    if (hovered.kind === "job") showDetail(hovered);
   } else {
     hideTip();
     canvas.style.cursor = "default";
@@ -1774,10 +1768,7 @@ qInput.addEventListener("input", () => {
     qRes.querySelectorAll(".result-item").forEach(el => {
       el.addEventListener("click", () => {
         const cat = el.dataset.cat;
-        const title = el.dataset.title;
         enterCategory(cat);
-        const found = DATA.find(d => d.title === title);
-        if (found) showDetail(found);
         qInput.value = ""; qRes.classList.remove("show");
       });
     });
@@ -2007,9 +1998,6 @@ fetch("data.json").then(r => r.json()).then(d => {
   document.getElementById("tbYear").textContent = currentYearLabel();
   updateTbNow();
   refresh();
-  // 첫 로드 시 대표 직업(상점판매원, 한국 최대 직업) 자동 표시
-  const featured = DATA.find(x => x.title === "상점판매원") || DATA[0];
-  if (featured) showDetail(featured);
 });
 window.addEventListener("resize", () => requestAnimationFrame(refresh));
 
