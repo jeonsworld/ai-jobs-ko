@@ -703,6 +703,33 @@ body::after {
   padding-top: 10px;
   margin-top: 4px;
 }
+/* KEIS 공식 5년 전망 — 청자색 좌측 라인으로 'work'와 구분 */
+.detail .official-outlook {
+  font-family: var(--serif);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--paper);
+  border-left: 3px solid var(--celadon);
+  padding: 10px 12px 10px 14px;
+  margin: 12px 0 0;
+  letter-spacing: -0.005em;
+}
+.detail .src-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  margin: 0 6px 6px 0;
+  background: var(--celadon);
+  color: var(--paper);
+  border-radius: 1px;
+  vertical-align: 1px;
+}
+.detail .src-badge.inline { background: var(--ink-mute); }
 
 .detail .cta {
   display: block;
@@ -1669,7 +1696,8 @@ function showDetail(d) {
       <div class="gcell"><div class="l">학력요건</div><div class="v">${esc(d.education || "—")}</div></div>
       ${stars ? `<div class="gcell" style="grid-column:1/-1"><div class="l">커리어넷 인기도 (조회수 ${d.views.toLocaleString()}회)</div><div class="v" style="font-family:'Playfair Display',serif;font-size:18px;letter-spacing:2px;color:var(--gold)">${stars}</div></div>` : ""}
     </div>
-    ${d.exposure_rationale ? `<div class="rationale">${esc(d.exposure_rationale)}</div>` : ""}
+    ${d.outlook_text ? `<div class="official-outlook"><span class="src-badge">KEIS 공식 5년 전망</span>${esc(d.outlook_text)}</div>` : ""}
+    ${d.exposure_rationale ? `<div class="rationale"><span class="src-badge inline">AI 노출도 평가</span>${esc(d.exposure_rationale)}</div>` : ""}
     <a class="cta" href="${d.url}" target="_blank">커리어넷 직업백과 보기 <span class="arr">→</span></a>
   `;
 }

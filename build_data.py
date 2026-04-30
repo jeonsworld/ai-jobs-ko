@@ -49,6 +49,15 @@ try:
 except FileNotFoundError:
     pass
 
+# KEIS 직업전망 공식 텍스트 (직업명 → 5년 전망 요약)
+# 출처: 한국고용정보원 직업전망 (data.go.kr 15119098, 2023)
+KEIS_OUTLOOK_TEXT: dict[str, str] = {}
+try:
+    with open("data/keis_outlook_text.json", encoding="utf-8") as _f:
+        KEIS_OUTLOOK_TEXT = json.load(_f)
+except FileNotFoundError:
+    pass
+
 
 def career_url(title: str) -> str:
     """매핑된 seq가 있으면 직업 상세 페이지, 없으면 직업백과 메인."""
@@ -567,6 +576,7 @@ def main():
                     "pay": pay,
                     "pay_source": pay_source,
                     "work": extra.get("work"),
+                    "outlook_text": KEIS_OUTLOOK_TEXT.get(j["title"]),
                     "views": extra.get("views"),
                     "jobs": jobs_count,
                     "series": raw_series,
