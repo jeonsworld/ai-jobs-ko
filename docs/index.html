@@ -990,10 +990,11 @@ body::after {
   </header>
 
   <p class="lede">
-    한국고용정보원 KNOW 직업분류의 <em>537개 직업</em>을 통계청·고용노동부
-    공식 통계, 그리고 커리어넷 직업백과의 <em>478개 실측 임금</em>·직무 설명과 결합해
-    한국 노동시장 약 <em>2,720만 개</em>의 일자리를 한 화면에 펼쳤다. 사각형의 <em>면적</em>은
-    취업자 수, <em>색</em>은 선택한 지표다. 카테고리를 누르면 그 안의 직업이 펼쳐진다.
+    한국고용정보원 KNOW 직업분류의 <em>537개 직업</em>을 통계청·고용노동부 공식 통계,
+    커리어넷 직업백과의 <em>478개 실측 임금</em>·직무 설명, KEIS의 <em>373개 5년 전망</em>과 결합해
+    한국 노동시장 약 <em><span id="ledeTotal">2,890만</span> 개</em>의 일자리를 한 화면에 펼쳤다.
+    사각형의 <em>면적</em>은 취업자 수, <em>색</em>은 선택한 지표다. 슬라이더로 연도를,
+    카테고리를 클릭해 그 안의 직업을 펼쳐볼 수 있다.
   </p>
 
   <!-- 컨트롤 바 -->
@@ -1092,7 +1093,7 @@ body::after {
       <div class="panel" id="detailPanel">
         <h3>직업 상세 <span class="num">호버 또는 클릭</span></h3>
         <div class="detail" id="detail">
-          <div class="ph">사각형 위로 마우스를 올리거나 클릭하면 직업의 통계가 여기에 펼쳐집니다.</div>
+          <div class="ph">사각형에 마우스를 올리면 통계 카드가 펼쳐집니다.<br>위 슬라이더로 <b>2015~2030년</b>을 오갈 수 있고, ▶로 자동 재생됩니다.</div>
         </div>
       </div>
     </aside>
@@ -1698,7 +1699,7 @@ function showDetail(d) {
     </div>
     ${d.outlook_text ? `<div class="official-outlook"><span class="src-badge">KEIS 공식 5년 전망</span>${esc(d.outlook_text)}</div>` : ""}
     ${d.exposure_rationale ? `<div class="rationale"><span class="src-badge inline">AI 노출도 평가</span>${esc(d.exposure_rationale)}</div>` : ""}
-    <a class="cta" href="${d.url}" target="_blank">커리어넷 직업백과 보기 <span class="arr">→</span></a>
+    <a class="cta" href="${d.url}" target="_blank">${d.career_seq ? "커리어넷 직업백과 보기" : "커리어넷에서 직접 검색"} <span class="arr">→</span></a>
   `;
 }
 
